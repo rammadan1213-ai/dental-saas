@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{% if object %}Edit Appointment{% else %}New Appointment{% endif %}{% endblock %}
+{% block page_title %}{% if object %}Edit Appointment{% else %}Schedule Appointment{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{% if object %}Edit Appointment{% else %}Schedule New Appointment{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.patient|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.dentist|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.date|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.start_time|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.end_time|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.status|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.priority|as_crispy_field }}
+                </div>
+            </div>
+            
+            {{ form.reason|as_crispy_field }}
+            {{ form.notes|as_crispy_field }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Save Appointment
+                </button>
+                <a href="{% url 'appointments:appointment_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

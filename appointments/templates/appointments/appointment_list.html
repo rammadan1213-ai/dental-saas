@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Appointments - Dental Clinic{% endblock %}
+{% block page_title %}Appointments{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-0">Appointments</h5>
+            </div>
+            <div class="col-md-6">
+                <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary float-end">
+                    <i class="bi bi-plus-circle"></i> New Appointment
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        {% for value, label in filter_form.status.field.choices %}
+                        <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="dentist" class="form-control">
+                        <option value="">All Dentists</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">Filter</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'appointments:appointment_calendar' %}" class="btn btn-info w-100">
+                        <i class="bi bi-calendar3"></i> Calendar
+                    </a>
+                </div>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Patient</th>
+                        <th>Dentist</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>
+                            <strong>{{ appointment.date }}</strong><br>
+                            <small>{{ appointment.start_time }} - {{ appointment.end_time }}</small>
+                        </td>
+                        <td>{{ appointment.patient.full_name }}</td>
+                        <td>{{ appointment.dentist.get_full_name|default:"Unassigned" }}</td>
+                        <td>
+                            <span class="badge bg-{{ appointment.status }}">{{ appointment.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ appointment.priority }}">{{ appointment.get_priority_display }}</span>
+                        </td>
+                        <td>{{ appointment.reason|truncatechars:40 }}</td>
+                        <td>
+                            <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'appointments:appointment_update' appointment.pk %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'appointments:appointment_delete' appointment.pk %}" class="btn btn-sm btn-danger delete-btn">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No appointments found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page_obj.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{% if object %}Edit Invoice{% else %}New Invoice{% endif %}{% endblock %}
+{% block page_title %}{% if object %}Edit Invoice{% else %}Create Invoice{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{% if object %}Edit Invoice{% else %}Create New Invoice{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.patient|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.issue_date|as_crispy_field }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.due_date|as_crispy_field }}
+                </div>
+            </div>
+            
+            <hr>
+            <h6>Invoice Items</h6>
+            {{ items_formset.management_form }}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_form in items_formset %}
+                    <tr class="item-row">
+                        <td>{{ item_form.description }}</td>
+                        <td>{{ item_form.quantity }}</td>
+                        <td>{{ item_form.unit_price }}</td>
+                        <td class="total-cell">$0.00</td>
+                        <td>{{ item_form.DELETE }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <hr>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.tax_amount|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.discount_amount|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.status|as_crispy_field }}
+                </div>
+            </div>
+            
+            {{ form.notes|as_crispy_field }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Save Invoice
+                </button>
+                <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

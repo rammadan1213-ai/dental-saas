@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Record Payment{% endblock %}
+{% block page_title %}Record Payment{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Record Payment for Invoice {{ invoice.invoice_number }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <strong>Invoice Total:</strong> ${{ invoice.total_amount|floatformat:2 }} | 
+            <strong>Amount Paid:</strong> ${{ invoice.amount_paid|floatformat:2 }} | 
+            <strong>Balance Due:</strong> ${{ invoice.balance_due|floatformat:2 }}
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {{ form|crispy }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Record Payment
+                </button>
+                <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

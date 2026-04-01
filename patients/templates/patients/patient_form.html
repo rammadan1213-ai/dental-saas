@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{% if object %}Edit Patient{% else %}Add Patient{% endif %}{% endblock %}
+{% block page_title %}{% if object %}Edit Patient{% else %}Add Patient{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{% if object %}Edit Patient{% else %}New Patient{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.first_name|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.last_name|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.email|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.phone|as_crispy_field }}
+                </div>
+            </div>
+            
+            {{ form.address|as_crispy_field }}
+            
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.date_of_birth|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.gender|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.blood_type|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.emergency_contact|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.emergency_phone|as_crispy_field }}
+                </div>
+            </div>
+            
+            {{ form.allergies|as_crispy_field }}
+            {{ form.medical_history|as_crispy_field }}
+            {{ form.medications|as_crispy_field }}
+            {{ form.notes|as_crispy_field }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Save Patient
+                </button>
+                <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}SaaS Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .plan-card {
+        border-radius: 15px;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .plan-card:hover {
+        border-color: #667eea;
+    }
+    
+    .table-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .table-card .card-header {
+        background: white;
+        border-bottom: 2px solid #f8f9fa;
+        padding: 20px 25px;
+    }
+    
+    .table thead th {
+        border-bottom: 2px solid #e9ecef;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+    
+    .badge-plan {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    .btn-action {
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+    }
+    
+    .revenue-ring {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: conic-gradient(#667eea 0deg, #e9ecef 0deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .revenue-ring::before {
+        content: '';
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        background: white;
+        border-radius: 50%;
+    }
+    
+    .revenue-value {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2"><i class="bi bi-gear-fill me-3"></i> SaaS Admin Dashboard</h1>
+                <p class="mb-0 opacity-75">Manage all clinics, subscriptions & billing</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-inline-flex align-items-center px-4 py-2 bg-white bg-opacity-20 rounded-pill">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    <span>{{ "now"|date:"F d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label mb-2">Total Clinics</p>
+                            <h2 class="stat-value text-primary">{{ total_clinics }}</h2>
+                            <p class="text-muted small mb-0 mt-2">
+                                <i class="bi bi-arrow-up-circle me-1"></i>
+                                {{ active_clinics }} active
+                            </p>
+                        </div>
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-hospital"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label mb-2">Active Subs</p>
+                            <h2 class="stat-value text-success">{{ total_subscriptions }}</h2>
+                            <p class="text-muted small mb-0 mt-2">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {{ expired_subscriptions }} expired
+                            </p>
+                        </div>
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-credit-card"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label mb-2">Monthly Revenue</p>
+                            <h2 class="stat-value text-dark">${{ monthly_revenue }}</h2>
+                            <p class="text-success small mb-0 mt-2">
+                                <i class="bi bi-graph-up me-1"></i>
+                                {{ total_subscriptions }} paying clinics
+                            </p>
+                        </div>
+                        <div class="stat-icon bg-dark bg-opacity-10 text-dark">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label mb-2">Annual Run Rate</p>
+                            <h2 class="stat-value text-warning">${{ monthly_revenue|mul:12 }}</h2>
+                            <p class="text-muted small mb-0 mt-2">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                Projected yearly
+                            </p>
+                        </div>
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-trend-up"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan Distribution -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card table-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-building me-2"></i>All Clinics</h5>
+                    <span class="badge bg-primary rounded-pill">{{ clinics|length }} total</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Clinic</th>
+                                    <th>Owner</th>
+                                    <th>Plan</th>
+                                    <th>Status</th>
+                                    <th>Expires</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for clinic in clinics %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                                <i class="bi bi-hospital text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ clinic.name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ clinic.email|default:"No email" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="fw-medium">{{ clinic.owner.get_full_name|default:clinic.owner.username }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-plan bg-{% if clinic.subscription.plan == 'basic' %}primary{% elif clinic.subscription.plan == 'pro' %}success{% else %}danger{% endif %} bg-opacity-10 text-{% if clinic.subscription.plan == 'basic' %}primary{% elif clinic.subscription.plan == 'pro' %}success{% else %}danger{% endif %}">
+                                            <i class="bi bi-star-fill me-1"></i>
+                                            {{ clinic.subscription.plan|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if clinic.is_active and clinic.subscription.is_active and clinic.subscription.expiry_date >= today %}
+                                            <span class="badge bg-success bg-opacity-10 text-success">
+                                                <i class="bi bi-check-circle me-1"></i>Active
+                                            </span>
+                                        {% elif clinic.subscription.is_expired %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Expired
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                                <i class="bi bi-pause-circle me-1"></i>Inactive
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="{% if clinic.subscription.is_expired %}text-danger{% else %}text-muted{% endif %}">
+                                            {{ clinic.subscription.expiry_date|date:"M d, Y" }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <a href="{% url 'accounts:clinic_detail' clinic.pk %}" class="btn btn-sm btn-outline-primary btn-action">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-dark btn-action" onclick="updateSubscription({{ clinic.id }})">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm {% if clinic.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-action" onclick="toggleStatus({{ clinic.id }})">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                            <strong>No clinics yet</strong>
+                                            <br>
+                                            <small>Clinics will appear here once registered</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card table-card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Plan Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="p-3 bg-primary bg-opacity-10 rounded-3 text-center">
+                                <h3 class="text-primary mb-1">{{ basic_count }}</h3>
+                                <span class="badge bg-primary rounded-pill mb-2">Basic</span>
+                                <br>
+                                <small class="text-muted">$10/mo</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-success bg-opacity-10 rounded-3 text-center">
+                                <h3 class="text-success mb-1">{{ pro_count }}</h3>
+                                <span class="badge bg-success rounded-pill mb-2">Pro</span>
+                                <br>
+                                <small class="text-muted">$25/mo</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-danger bg-opacity-10 rounded-3 text-center">
+                                <h3 class="text-danger mb-1">{{ enterprise_count }}</h3>
+                                <span class="badge bg-danger rounded-pill mb-2">Enterprise</span>
+                                <br>
+                                <small class="text-muted">$50/mo</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-secondary bg-opacity-10 rounded-3 text-center">
+                                <h3 class="text-secondary mb-1">{{ expired_subscriptions }}</h3>
+                                <span class="badge bg-secondary rounded-pill mb-2">Expired</span>
+                                <br>
+                                <small class="text-muted">Need renewal</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <h6 class="text-muted mb-3">Revenue Breakdown</h6>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <div class="px-3 py-2 bg-primary bg-opacity-10 rounded">
+                                <strong class="text-primary">${{ basic_count|mul:10 }}</strong>
+                                <br><small class="text-muted">Basic</small>
+                            </div>
+                            <div class="px-3 py-2 bg-success bg-opacity-10 rounded">
+                                <strong class="text-success">${{ pro_count|mul:25 }}</strong>
+                                <br><small class="text-muted">Pro</small>
+                            </div>
+                            <div class="px-3 py-2 bg-danger bg-opacity-10 rounded">
+                                <strong class="text-danger">${{ enterprise_count|mul:50 }}</strong>
+                                <br><small class="text-muted">Enterprise</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Subscription Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Update Subscription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <input type="hidden" id="update_clinic_id">
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Subscription Plan</label>
+                    <select class="form-select form-select-lg" id="new_plan">
+                        <option value="basic">Basic - $10/month</option>
+                        <option value="pro">Pro - $25/month</option>
+                        <option value="enterprise">Enterprise - $50/month</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Extend Days</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control form-control-lg" id="new_days" value="30" min="1">
+                        <span class="input-group-text">days</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" onclick="saveSubscription()">
+                    <i class="bi bi-check2 me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleStatus(clinicId) {
+    if (!confirm('Are you sure you want to toggle this clinic\'s status?')) return;
+    fetch(`/accounts/admin/toggle-clinic/${clinicId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        location.reload();
+    });
+}
+
+function updateSubscription(clinicId) {
+    document.getElementById('update_clinic_id').value = clinicId;
+    new bootstrap.Modal(document.getElementById('updateModal')).show();
+}
+
+function saveSubscription() {
+    const clinicId = document.getElementById('update_clinic_id').value;
+    const plan = document.getElementById('new_plan').value;
+    const days = document.getElementById('new_days').value;
+    
+    fetch(`/accounts/admin/update-subscription/${clinicId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ plan: plan, days: days })
+    })
+    .then(response => response.json())
+    .then(data => {
+        location.reload();
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

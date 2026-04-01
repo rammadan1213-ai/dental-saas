@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Treatments - Dental Clinic{% endblock %}
+{% block page_title %}Treatments{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-0">Treatment Records</h5>
+            </div>
+            <div class="col-md-6">
+                <a href="{% url 'treatments:treatment_create' %}" class="btn btn-primary float-end">
+                    <i class="bi bi-plus-circle"></i> New Treatment
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Dentist</th>
+                        <th>Procedure</th>
+                        <th>Cost</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for treatment in treatments %}
+                    <tr>
+                        <td>{{ treatment.treatment_date }}</td>
+                        <td>{{ treatment.patient.full_name }}</td>
+                        <td>{{ treatment.dentist.get_full_name }}</td>
+                        <td>{{ treatment.procedure|truncatechars:40 }}</td>
+                        <td>${{ treatment.cost|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge bg-{{ treatment.status }}">{{ treatment.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'treatments:treatment_detail' treatment.pk %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'treatments:treatment_update' treatment.pk %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'treatments:treatment_delete' treatment.pk %}" class="btn btn-sm btn-danger delete-btn">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No treatments found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page_obj.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

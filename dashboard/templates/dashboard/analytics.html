@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Analytics - Dental Clinic{% endblock %}
+{% block page_title %}Analytics & Reports{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Appointment Trends (Last 30 Days)
+            </div>
+            <div class="card-body">
+                <canvas id="appointmentChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart"></i> Appointment Status Distribution
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> Revenue by Month (Last 12 Months)
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-people"></i> Dentist Performance
+            </div>
+            <div class="card-body">
+                <canvas id="dentistChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const appointmentData = {{ appointment_stats|safe }};
+const statusData = {{ status_distribution|safe }};
+const revenueData = {{ revenue_by_month|safe }};
+const dentistData = {{ dentist_performance|safe }};
+
+new Chart(document.getElementById('appointmentChart'), {
+    type: 'line',
+    data: {
+        labels: appointmentData.labels,
+        datasets: [{
+            label: 'Appointments',
+            data: appointmentData.values,
+            borderColor: '#667eea',
+            tension: 0.1
+        }]
+    }
+});
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: statusData.labels,
+        datasets: [{
+            data: statusData.values,
+            backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545']
+        }]
+    }
+});
+
+new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+        labels: revenueData.labels,
+        datasets: [{
+            label: 'Revenue',
+            data: revenueData.values,
+            backgroundColor: '#667eea'
+        }]
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

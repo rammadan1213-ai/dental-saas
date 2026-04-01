@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ treatment.procedure|truncatechars:30 }}{% endblock %}
+{% block page_title %}Treatment Details{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-0">Treatment Details</h5>
+            </div>
+            <div class="col-md-6">
+                <a href="{% url 'treatments:treatment_update' treatment.pk %}" class="btn btn-warning float-end me-2">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a href="{% url 'treatments:treatment_list' %}" class="btn btn-secondary float-end">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted mb-3">Patient Information</h6>
+                <p><strong>Patient:</strong> {{ treatment.patient.full_name }}</p>
+                <p><strong>Phone:</strong> {{ treatment.patient.phone }}</p>
+                <p><strong>Email:</strong> {{ treatment.patient.email }}</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted mb-3">Treatment Information</h6>
+                <p><strong>Date:</strong> {{ treatment.treatment_date }}</p>
+                <p><strong>Dentist:</strong> {{ treatment.dentist.get_full_name }}</p>
+                <p><strong>Status:</strong> <span class="badge bg-{{ treatment.status }}">{{ treatment.get_status_display }}</span></p>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <h6 class="text-muted mb-3">Clinical Details</h6>
+                <p><strong>Diagnosis:</strong></p>
+                <p>{{ treatment.diagnosis }}</p>
+                
+                <p><strong>Procedure:</strong></p>
+                <p>{{ treatment.procedure }}</p>
+                
+                {% if treatment.tooth_number %}
+                <p><strong>Tooth Number:</strong> {{ treatment.tooth_number }}</p>
+                {% endif %}
+                
+                {% if treatment.anesthesia_used %}
+                <p><strong>Anesthesia Used:</strong> {{ treatment.anesthesia_used }}</p>
+                {% endif %}
+                
+                <p><strong>Cost:</strong> ${{ treatment.cost|floatformat:2 }}</p>
+            </div>
+        </div>
+        
+        {% if treatment.notes %}
+        <hr>
+        <div class="row">
+            <div class="col-md-12">
+                <h6 class="text-muted mb-3">Notes</h6>
+                <p>{{ treatment.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

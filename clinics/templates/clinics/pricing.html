@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pricing - Dental Clinic SaaS{% endblock %}
+
+{% block content %}
+<script src="https://js.stripe.com/v3/"></script>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4">Choose Your Plan</h1>
+        <p class="lead text-muted">Select the perfect plan for your dental clinic</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col">
+            <div class="card h-100 text-center border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="my-1">Basic</h4>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-title pricing-card-title">$10<small class="text-muted fw-light">/month</small></h2>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li><i class="bi bi-check text-success"></i> Up to 500 Patients</li>
+                        <li><i class="bi bi-check text-success"></i> Appointment Scheduling</li>
+                        <li><i class="bi bi-check text-success"></i> Basic Patient Records</li>
+                        <li><i class="bi bi-check text-success"></i> Treatment Notes</li>
+                        <li class="text-muted"><i class="bi bi-x text-danger"></i> Billing & Invoicing</li>
+                        <li class="text-muted"><i class="bi bi-x text-danger"></i> Reports & Analytics</li>
+                    </ul>
+                    <button onclick="startCheckout('basic')" class="btn btn-lg btn-outline-primary w-100">Select Basic</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 text-center border-primary position-relative">
+                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success">Popular</span>
+                <div class="card-header bg-primary text-white">
+                    <h4 class="my-1">Pro</h4>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-title pricing-card-title">$25<small class="text-muted fw-light">/month</small></h2>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li><i class="bi bi-check text-success"></i> Unlimited Patients</li>
+                        <li><i class="bi bi-check text-success"></i> Appointment Scheduling</li>
+                        <li><i class="bi bi-check text-success"></i> Full Patient Records</li>
+                        <li><i class="bi bi-check text-success"></i> Treatment Notes</li>
+                        <li><i class="bi bi-check text-success"></i> Billing & Invoicing</li>
+                        <li><i class="bi bi-check text-success"></i> Basic Reports</li>
+                    </ul>
+                    <button onclick="startCheckout('pro')" class="btn btn-lg btn-primary w-100">Select Pro</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card h-100 text-center border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="my-1">Enterprise</h4>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-title pricing-card-title">$50<small class="text-muted fw-light">/month</small></h2>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li><i class="bi bi-check text-success"></i> Unlimited Patients</li>
+                        <li><i class="bi bi-check text-success"></i> Appointment Scheduling</li>
+                        <li><i class="bi bi-check text-success"></i> Full Patient Records</li>
+                        <li><i class="bi bi-check text-success"></i> Treatment Notes</li>
+                        <li><i class="bi bi-check text-success"></i> Billing & Invoicing</li>
+                        <li><i class="bi bi-check text-success"></i> Advanced Analytics</li>
+                    </ul>
+                    <button onclick="startCheckout('enterprise')" class="btn btn-lg btn-outline-primary w-100">Select Enterprise</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 text-center">
+        <h3>Frequently Asked Questions</h3>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>Can I change plans later?</h5>
+                <p class="text-muted">Yes, you can upgrade or downgrade your plan at any time from your subscription management page.</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Is there a free trial?</h5>
+                <p class="text-muted">We offer a 14-day free trial on all plans. No credit card required.</p>
+            </div>
+            <div class="col-md-6">
+                <h5>What payment methods do you accept?</h5>
+                <p class="text-muted">We accept all major credit cards through Stripe.</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Can I cancel anytime?</h5>
+                <p class="text-muted">Yes, you can cancel your subscription at any time. You'll retain access until the end of your billing period.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const stripe = Stripe('{{ stripe_key }}');
+
+async function startCheckout(plan) {
+    try {
+        const response = await fetch('/subscription/api/create-checkout/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ plan: plan })
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

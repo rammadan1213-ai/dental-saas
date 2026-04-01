@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Invoices - Dental Clinic{% endblock %}
+{% block page_title %}Billing & Invoices{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card success">
+            <div class="stat-value">${{ total_revenue|floatformat:2 }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card primary">
+            <div class="stat-value">${{ total_paid|floatformat:2 }}</div>
+            <div class="stat-label">Total Paid</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card warning">
+            <div class="stat-value">${{ total_outstanding|floatformat:2 }}</div>
+            <div class="stat-label">Outstanding</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-0">Invoices</h5>
+            </div>
+            <div class="col-md-6">
+                <a href="{% url 'billing:invoice_create' %}" class="btn btn-primary float-end">
+                    <i class="bi bi-plus-circle"></i> New Invoice
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Patient</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'billing:invoice_detail' invoice.pk %}">
+                                {{ invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td>{{ invoice.patient.full_name }}</td>
+                        <td>{{ invoice.issue_date }}</td>
+                        <td>{{ invoice.due_date }}</td>
+                        <td>${{ invoice.total_amount|floatformat:2 }}</td>
+                        <td>${{ invoice.amount_paid|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge bg-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'billing:invoice_pdf' invoice.pk %}" class="btn btn-sm btn-secondary" target="_blank">
+                                <i class="bi bi-file-pdf"></i>
+                            </a>
+                            <a href="{% url 'billing:payment_create' invoice.pk %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-currency-dollar"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No invoices found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page_obj.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

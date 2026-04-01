@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Manage Subscription - Dental Clinic SaaS{% endblock %}
+
+{% block content %}
+<script src="https://js.stripe.com/v3/"></script>
+
+<div class="container py-5">
+    <h1 class="mb-4">Manage Subscription</h1>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Current Plan</h5>
+                </div>
+                <div class="card-body">
+                    {% if subscription %}
+                        <h2 class="text-primary">{{ subscription.get_plan_display }}</h2>
+                        <p class="text-muted mb-1">
+                            Status: 
+                            {% if subscription.is_expired %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% elif subscription.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-warning">Inactive</span>
+                            {% endif %}
+                        </p>
+                        <p class="mb-1"><strong>Started:</strong> {{ subscription.start_date }}</p>
+                        <p class="mb-0"><strong>Expires:</strong> {{ subscription.expiry_date }}</p>
+                    {% else %}
+                        <p class="text-muted">No active subscription</p>
+                        <a href="{% url 'clinics:pricing' %}" class="btn btn-primary btn-sm">Choose a Plan</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if subscription %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Billing</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Manage your subscription payments</p>
+                    <form action="{% url 'payments:history' %}" method="get">
+                        <button type="submit" class="btn btn-outline-primary btn-sm w-100">View Payment History</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Change Plan</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card p-3 text-center {% if subscription.plan == 'basic' %}border-success bg-light{% endif %}">
+                                <input class="form-check-input" type="radio" name="plan" id="plan_basic" value="basic" {% if subscription.plan == 'basic' %}checked{% endif %}>
+                                <label class="form-check-label" for="plan_basic">
+                                    <h6 class="mt-2">Basic</h6>
+                                    <p class="text-muted mb-0">$10/month</p>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 text-center {% if subscription.plan == 'pro' %}border-success bg-light{% endif %}">
+                                <input class="form-check-input" type="radio" name="plan" id="plan_pro" value="pro" {% if subscription.plan == 'pro' %}checked{% endif %}>
+                                <label class="form-check-label" for="plan_pro">
+                                    <h6 class="mt-2">Pro</h6>
+                                    <p class="text-muted mb-0">$25/month</p>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card p-3 text-center {% if subscription.plan == 'enterprise' %}border-success bg-light{% endif %}">
+                                <input class="form-check-input" type="radio" name="plan" id="plan_enterprise" value="enterprise" {% if subscription.plan == 'enterprise' %}checked{% endif %}>
+                                <label class="form-check-label" for="plan_enterprise">
+                                    <h6 class="mt-2">Enterprise</h6>
+                                    <p class="text-muted mb-0">$50/month</p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="updatePlan()" class="btn btn-primary mt-4 w-100">Update Plan with Stripe</button>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Plan Features</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th class="text-center">Basic</th>
+                                <th class="text-center">Pro</th>
+                                <th class="text-center">Enterprise</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Patients</td>
+                                <td class="text-center">500</td>
+                                <td class="text-center">Unlimited</td>
+                                <td class="text-center">Unlimited</td>
+                            </tr>
+                            <tr>
+                                <td>Appointments</td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Billing & Invoicing</td>
+                                <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Reports</td>
+                                <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Advanced Analytics</td>
+                                <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                                <td class="text-center"><i class="bi bi-x text-danger"></i></td>
+                                <td class="text-center"><i class="bi bi-check text-success"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if subscription %}
+            <div class="card mt-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Danger Zone</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Cancel Subscription</h6>
+                    <p class="text-muted">Once cancelled, you'll lose access to premium features at the end of your billing period.</p>
+                    <form action="{% url 'clinics:subscription_manage' %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="cancel">
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to cancel?')">Cancel Subscription</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+const stripe = Stripe('{{ stripe_key }}');
+
+async function updatePlan() {
+    const plan = document.querySelector('input[name="plan"]:checked').value;
+    
+    try {
+        const response = await fetch('/subscription/api/create-checkout/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ plan: plan })
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

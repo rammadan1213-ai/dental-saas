@@ -1,0 +1,204 @@
+<style>
+.navbar-custom {
+    background: #fff !important;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 25px;
+}
+
+.navbar-brand-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: #1a1a2e;
+    text-decoration: none;
+}
+
+.navbar-brand-custom i {
+    color: #667eea;
+    font-size: 1.5rem;
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #6c757d;
+    border: none;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-icon-btn:hover {
+    background: #667eea;
+    color: #fff;
+}
+
+.nav-icon-btn .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.6rem;
+    padding: 3px 6px;
+}
+
+.search-box {
+    background: #f8f9fa;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 15px;
+    width: 250px;
+}
+
+.search-box:focus {
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.user-dropdown .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 15px 5px 5px;
+    background: #f8f9fa;
+    border-radius: 30px;
+    border: none;
+}
+
+.user-dropdown .dropdown-toggle::after {
+    display: none;
+}
+
+.user-dropdown .user-avatar-sm {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.user-dropdown .dropdown-menu {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    padding: 10px;
+    min-width: 200px;
+}
+
+.user-dropdown .dropdown-item {
+    border-radius: 10px;
+    padding: 10px 15px;
+    margin-bottom: 5px;
+}
+
+.user-dropdown .dropdown-item:hover {
+    background: #f8f9fa;
+}
+
+.user-dropdown .dropdown-item i {
+    width: 20px;
+    color: #6c757d;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-quick-action {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-quick-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    color: #fff;
+}
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand-custom" href="{% url 'dashboard:home' %}">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Dental SaaS</span>
+        </a>
+        
+        <div class="quick-actions d-none d-lg-flex">
+            <a href="{% url 'patients:patient_list' %}" class="btn btn-quick-action">
+                <i class="bi bi-person-plus me-2"></i>
+                New Patient
+            </a>
+        </div>
+        
+        <div class="navbar-actions">
+            <button class="nav-icon-btn d-lg-none" type="button">
+                <i class="bi bi-search"></i>
+            </button>
+            
+            <button class="nav-icon-btn">
+                <i class="bi bi-bell"></i>
+                <span class="badge bg-danger rounded-circle">3</span>
+            </button>
+            
+            <div class="dropdown user-dropdown">
+                <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <div class="user-avatar-sm">
+                        {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                    </div>
+                    <span class="d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span>
+                    <i class="bi bi-chevron-down ms-2 text-muted"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <div class="px-3 py-2 text-center">
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ user.email }}</small>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                            <i class="bi bi-person me-2"></i>
+                            My Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'clinics:subscription_manage' %}">
+                            <i class="bi bi-credit-card me-2"></i>
+                            Subscription
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                            <i class="bi bi-box-arrow-left me-2"></i>
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

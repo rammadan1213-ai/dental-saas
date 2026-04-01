@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{% if object %}Edit Treatment{% else %}New Treatment{% endif %}{% endblock %}
+{% block page_title %}{% if object %}Edit Treatment{% else %}Record Treatment{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{% if object %}Edit Treatment{% else %}Record New Treatment{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.patient|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.dentist|as_crispy_field }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.treatment_date|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.status|as_crispy_field }}
+                </div>
+            </div>
+            
+            {{ form.diagnosis|as_crispy_field }}
+            {{ form.procedure|as_crispy_field }}
+            
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.tooth_number|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.anesthesia_used|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.cost|as_crispy_field }}
+                </div>
+            </div>
+            
+            {{ form.notes|as_crispy_field }}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Save Treatment
+                </button>
+                <a href="{% url 'treatments:treatment_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

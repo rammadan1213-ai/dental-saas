@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Reports - Dental Clinic{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Reports</h5>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <hr>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Appointments</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Total Appointments</td>
+                                <td><strong>{{ total_appointments }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Completed</td>
+                                <td><span class="text-success">{{ completed_appointments }}</span></td>
+                            </tr>
+                            <tr>
+                                <td>Cancelled</td>
+                                <td><span class="text-danger">{{ cancelled_appointments }}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Revenue</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Total Revenue</td>
+                                <td><strong>${{ total_revenue|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Total Treatments</td>
+                                <td><strong>{{ total_treatments }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Treatment Revenue</td>
+                                <td><span class="text-success">${{ treatment_revenue|floatformat:2 }}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Billing Summary</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Total Invoices</td>
+                                <td><strong>{{ total_invoices }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Total Amount</td>
+                                <td><strong>${{ total_outstanding|floatformat:2 }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

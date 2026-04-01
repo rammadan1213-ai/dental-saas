@@ -1,0 +1,335 @@
+<style>
+.sidebar {
+    width: 280px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    padding: 0;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.sidebar-header {
+    padding: 25px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h4 {
+    margin: 0;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-header h4 i {
+    color: #667eea;
+    font-size: 1.5rem;
+}
+
+.sidebar .nav {
+    padding: 15px 12px;
+}
+
+.sidebar .nav-item {
+    margin-bottom: 5px;
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    padding: 14px 18px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: #667eea;
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+    background: rgba(102, 126, 234, 0.15);
+    color: #fff;
+}
+
+.sidebar .nav-link:hover::before {
+    transform: scaleY(1);
+}
+
+.sidebar .nav-link.active {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, transparent 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.sidebar .nav-link.active::before {
+    transform: scaleY(1);
+}
+
+.sidebar .nav-link i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-section {
+    padding: 10px 18px 5px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    margin: 15px 18px;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+}
+
+.user-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.user-info h6 {
+    margin: 0;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.user-info small {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+}
+
+.subscription-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sidebar .nav-link.saaS-link {
+    background: linear-gradient(90deg, rgba(255, 193, 7, 0.2) 0%, transparent 100%);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.sidebar .nav-link.saaS-link:hover {
+    background: linear-gradient(90deg, rgba(255, 193, 7, 0.3) 0%, transparent 100%);
+}
+
+.sidebar .nav-link.saaS-link i {
+    color: #ffc107;
+}
+</style>
+
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h4>
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Dental SaaS</span>
+        </h4>
+    </div>
+    
+    <div class="sidebar-section">Main Menu</div>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">
+                <i class="bi bi-grid-1x2"></i>
+                Dashboard
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'patient' in request.path %}active{% endif %}" href="{% url 'patients:patient_list' %}">
+                <i class="bi bi-people-fill"></i>
+                Patients
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'appointment' in request.path and 'calendar' not in request.path %}active{% endif %}" href="{% url 'appointments:appointment_list' %}">
+                <i class="bi bi-calendar-event"></i>
+                Appointments
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'treatment' in request.path %}active{% endif %}" href="{% url 'treatments:treatment_list' %}">
+                <i class="bi bi-bandaid"></i>
+                Treatments
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'billing' in request.path or 'invoice' in request.path %}active{% endif %}" href="{% url 'billing:invoice_list' %}">
+                <i class="bi bi-wallet2"></i>
+                Billing
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-section">Views</div>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link {% if 'calendar' in request.path %}active{% endif %}" href="{% url 'appointments:appointment_calendar' %}">
+                <i class="bi bi-calendar3-week"></i>
+                Calendar
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'analytics' in request.path %}active{% endif %}" href="{% url 'dashboard:analytics' %}">
+                <i class="bi bi-graph-up-arrow"></i>
+                Analytics
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="{% url 'dashboard:reports' %}">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                Reports
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-section">Management</div>
+    <ul class="nav flex-column">
+        {% if user.is_admin_user %}
+        <li class="nav-item">
+            <a class="nav-link {% if 'user' in request.path %}active{% endif %}" href="{% url 'accounts:user_list' %}">
+                <i class="bi bi-person-badge"></i>
+                Users
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'audit' in request.path %}active{% endif %}" href="{% url 'accounts:audit_log_list' %}">
+                <i class="bi bi-shield-check"></i>
+                Audit Logs
+            </a>
+        </li>
+        {% endif %}
+        
+        {% if user.is_superuser %}
+        <li class="nav-item">
+            <a class="nav-link saaS-link {% if 'superadmin' in request.path %}active{% endif %}" href="{% url 'accounts:superadmin_dashboard' %}">
+                <i class="bi bi-gem"></i>
+                SaaS Admin
+            </a>
+        </li>
+        {% endif %}
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'subscription' in request.path or 'pricing' in request.path %}active{% endif %}" href="{% url 'clinics:subscription_manage' %}">
+                <i class="bi bi-credit-card"></i>
+                Subscription
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-section">Account</div>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link {% if 'profile' in request.path %}active{% endif %}" href="{% url 'accounts:profile' %}">
+                <i class="bi bi-person-circle"></i>
+                Profile
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:logout' %}">
+                <i class="bi bi-box-arrow-left"></i>
+                Logout
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar">
+                {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+            </div>
+            <div class="user-info">
+                <h6>{{ user.get_full_name|default:user.username }}</h6>
+                <small>{{ user.get_role_display }}</small>
+            </div>
+        </div>
+        {% if user.clinic %}
+        <div class="text-center mt-3">
+            <span class="subscription-badge">
+                <i class="bi bi-star-fill me-1"></i>
+                {{ user.clinic.subscription.plan|title }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+</nav>
