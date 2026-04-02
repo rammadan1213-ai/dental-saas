@@ -27,7 +27,7 @@ def setup_view(request):
         # Create clinic
         clinic = Clinic.objects.create(name=clinic_name, owner=None)
 
-        # Create admin user
+        # Create admin user with superuser=True
         admin = User.objects.create_user(
             username=admin_username,
             email=admin_email,
@@ -59,7 +59,51 @@ def setup_view(request):
         )
         return redirect("accounts:login")
 
-    return render(request, "setup.html")
+    return render(request, "setup/setup.html")
+
+
+def create_superadmin(request):
+    """Create super admin user (bypasses existing user check)"""
+
+    if request.method == "POST":
+        username = request.POST.get("username", "eng.abdulrahem")
+        email = request.POST.get("email", "eng.abdulrahem@example.com")
+        password = request.POST.get("password", "hagaag13")
+        clinic_name = request.POST.get("clinic_name", "Main Dental Clinic")
+
+        # Create clinic
+        clinic = Clinic.objects.create(name=clinic_name, owner=None)
+
+        # Create super admin
+        admin = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name="Abdulrahem",
+            last_name="Engineer",
+            role="admin",
+            is_staff=True,
+            is_superuser=True,
+            clinic=clinic,
+        )
+
+        clinic.owner = admin
+        clinic.save()
+
+        # Add enterprise subscription
+        Subscription.objects.create(
+            clinic=clinic,
+            plan="enterprise",
+            is_active=True,
+            expiry_date=date.today() + timedelta(days=365),
+        )
+
+        messages.success(
+            request, f"Super admin created! Login with: {username} / {password}"
+        )
+        return redirect("accounts:login")
+
+    return render(request, "setup/create_superadmin.html")
 
 
 def create_sample_data(clinic, admin_user):
