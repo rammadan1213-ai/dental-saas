@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Treatment, TreatmentTemplate
+from .models import Treatment, TreatmentTemplate, DentalService
 from .forms import TreatmentForm, TreatmentTemplateForm, TreatmentFilterForm
 
 
@@ -217,4 +217,58 @@ class TreatmentTemplateUpdateView(LoginRequiredMixin, StaffRequiredMixin, Update
 
     def form_valid(self, form):
         messages.success(self.request, "Treatment template updated successfully.")
+        return super().form_valid(form)
+
+
+class DentalServiceListView(LoginRequiredMixin, ListView):
+    model = DentalService
+    template_name = "treatments/service_list.html"
+    context_object_name = "services"
+    paginate_by = 12
+
+    def get_queryset(self):
+        return DentalService.objects.filter(is_active=True).order_by("category", "name")
+
+
+class DentalServiceCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = DentalService
+    fields = [
+        "name",
+        "description",
+        "category",
+        "default_price",
+        "duration_minutes",
+        "is_active",
+        "requires_appointment",
+    ]
+    template_name = "treatments/service_form.html"
+    success_url = reverse_lazy("treatments:service_list")
+
+    def test_func(self):
+        return self.request.user.is_admin_user
+
+    def form_valid(self, form):
+        messages.success(self.request, "Service created successfully.")
+        return super().form_valid(form)
+
+
+class DentalServiceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = DentalService
+    fields = [
+        "name",
+        "description",
+        "category",
+        "default_price",
+        "duration_minutes",
+        "is_active",
+        "requires_appointment",
+    ]
+    template_name = "treatments/service_form.html"
+    success_url = reverse_lazy("treatments:service_list")
+
+    def test_func(self):
+        return self.request.user.is_admin_user
+
+    def form_valid(self, form):
+        messages.success(self.request, "Service updated successfully.")
         return super().form_valid(form)

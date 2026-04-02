@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Dental Services{% endblock %}
+{% block page_title %}Dental Services{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-0">Available Services</h5>
+            </div>
+            {% if user.is_admin_user %}
+            <div class="col-md-6">
+                <a href="{% url 'treatments:service_create' %}" class="btn btn-primary float-end">
+                    <i class="bi bi-plus-circle"></i> Add Service
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            {% for service in services %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        <p class="text-muted small mb-2">
+                            <span class="badge bg-secondary">{{ service.get_category_display }}</span>
+                        </p>
+                        <p class="card-text">{{ service.description|truncatechars:100 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="text-primary">${{ service.default_price }}</strong>
+                                <small class="text-muted">/ {{ service.duration_minutes }}min</small>
+                            </div>
+                            {% if user.is_admin_user %}
+                            <div>
+                                <a href="{% url 'treatments:service_update' service.pk %}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No services available. Contact admin to add services.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

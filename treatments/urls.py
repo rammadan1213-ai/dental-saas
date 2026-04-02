@@ -24,4 +24,15 @@ urlpatterns = [
         views.TreatmentTemplateUpdateView.as_view(),
         name="template_update",
     ),
+    path("services/", views.DentalServiceListView.as_view(), name="service_list"),
+    path(
+        "services/create/",
+        views.DentalServiceCreateView.as_view(),
+        name="service_create",
+    ),
+    path(
+        "services/<int:pk>/update/",
+        views.DentalServiceUpdateView.as_view(),
+        name="service_update",
+    ),
 ]
