@@ -61,7 +61,7 @@ urlpatterns = [
     ),
     path(
         "switch-to-clinic/",
-        views.switch_to_clinic_view,
+        views.SwitchToClinicView.as_view(),
         name="switch_to_clinic",
     ),
 ]
