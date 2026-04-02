@@ -16,6 +16,7 @@ from xhtml2pdf import pisa
 from io import BytesIO
 from .models import Invoice, InvoiceItem, Payment
 from .forms import InvoiceForm, InvoiceItemFormSet, PaymentForm, InvoiceFilterForm
+from utils.permissions import has_feature, get_plan_features
 
 
 class ClinicFilterMixin:
@@ -45,6 +46,31 @@ class InvoiceListView(
     template_name = "billing/invoice_list.html"
     context_object_name = "invoices"
     paginate_by = 10
+
+    def get(self, request, *args, **kwargs):
+        if not has_feature(request.user, "billing"):
+            clinic = getattr(request.user, "clinic", None)
+            current_plan = "basic"
+            if clinic and hasattr(clinic, "subscription"):
+                current_plan = clinic.subscription.plan
+            return render(
+                request,
+                "upgrade_required.html",
+                {
+                    "title": "Billing Not Available",
+                    "message": "Billing and invoicing features are available on Pro and Enterprise plans.",
+                    "current_plan": current_plan,
+                    "target_plan": "Pro",
+                    "feature_name": "Billing & Invoicing",
+                    "features": [
+                        "Unlimited Invoices",
+                        "Payment Tracking",
+                        "Revenue Reports",
+                        "PDF Export",
+                    ],
+                },
+            )
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -89,6 +115,30 @@ class InvoiceCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
     form_class = InvoiceForm
     template_name = "billing/invoice_form.html"
     success_url = reverse_lazy("billing:invoice_list")
+
+    def get(self, request, *args, **kwargs):
+        if not has_feature(request.user, "billing"):
+            clinic = getattr(request.user, "clinic", None)
+            current_plan = "basic"
+            if clinic and hasattr(clinic, "subscription"):
+                current_plan = clinic.subscription.plan
+            return render(
+                request,
+                "upgrade_required.html",
+                {
+                    "title": "Billing Not Available",
+                    "message": "Create invoices with the Pro or Enterprise plan.",
+                    "current_plan": current_plan,
+                    "target_plan": "Pro",
+                    "feature_name": "Billing & Invoicing",
+                    "features": [
+                        "Unlimited Invoices",
+                        "Payment Tracking",
+                        "Revenue Reports",
+                    ],
+                },
+            )
+        return super().get(request, *args, **kwargs)
 
     def get_initial(self):
         initial = super().get_initial()

@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 import json
 from .models import Appointment
 from .forms import AppointmentForm, AppointmentFilterForm
+from notifications.views import notify_appointment_created
 
 
 class ClinicFilterMixin:
@@ -100,8 +101,22 @@ class AppointmentCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
     def form_valid(self, form):
         clinic = getattr(self.request.user, "clinic", None)
         form.instance.clinic = clinic
+        response = super().form_valid(form)
+        if clinic:
+            notify_appointment_created(self.request.user, form.instance)
+            if clinic.subscription.can_access_billing:
+                from billing.models import Invoice
+
+                if not Invoice.objects.filter(appointment=form.instance).exists():
+                    Invoice.objects.create(
+                        clinic=clinic,
+                        patient=form.instance.patient,
+                        appointment=form.instance,
+                        amount=0,
+                        status="draft",
+                    )
         messages.success(self.request, "Appointment scheduled successfully.")
-        return super().form_valid(form)
+        return response
 
 
 class AppointmentUpdateView(

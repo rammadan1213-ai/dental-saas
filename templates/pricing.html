@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Pricing - Dental SaaS{% endblock %}
+
+{% block extra_css %}
+<style>
+.pricing-card {
+    text-align: center;
+    padding: 40px 30px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+}
+
+.pricing-card.popular {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.pricing-card.popular:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.pricing-card.popular::before {
+    content: 'Most Popular';
+    position: absolute;
+    top: 20px;
+    right: -35px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 5px 40px;
+    font-size: 12px;
+    font-weight: 600;
+    transform: rotate(45deg);
+}
+
+.pricing-price {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.pricing-price span {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #6b7280;
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 30px 0;
+    margin: 0;
+}
+
+.pricing-features li {
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+    color: #4b5563;
+}
+
+.pricing-features li:last-child {
+    border-bottom: none;
+}
+
+.pricing-features li i {
+    color: #10b981;
+    margin-right: 10px;
+}
+
+.pricing-features li.disabled {
+    color: #9ca3af;
+    text-decoration: line-through;
+}
+
+.pricing-features li.disabled i {
+    color: #9ca3af;
+}
+
+.pricing-btn {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<script src="https://js.stripe.com/v3/"></script>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Pricing Plans</h1>
+        <p class="page-subtitle">Choose the perfect plan for your dental clinic</p>
+    </div>
+</div>
+
+<div class="row g-4 justify-content-center mb-5">
+    <div class="col-lg-4 col-md-6">
+        <div class="card pricing-card">
+            <h4 class="mb-3"><i class="bi bi-box text-primary me-2"></i>Basic</h4>
+            <div class="pricing-price">$10<span>/month</span></div>
+            <p class="text-muted mb-4">Perfect for small dental practices</p>
+            
+            <ul class="pricing-features">
+                <li><i class="bi bi-check-circle-fill"></i> Up to 100 patients</li>
+                <li><i class="bi bi-check-circle-fill"></i> Appointment scheduling</li>
+                <li><i class="bi bi-check-circle-fill"></i> Basic patient records</li>
+                <li><i class="bi bi-check-circle-fill"></i> Email support</li>
+                <li class="disabled"><i class="bi bi-x-circle-fill"></i> Billing & Invoicing</li>
+                <li class="disabled"><i class="bi bi-x-circle-fill"></i> Advanced analytics</li>
+                <li class="disabled"><i class="bi bi-x-circle-fill"></i> Multi-user access</li>
+            </ul>
+            
+            <button onclick="startCheckout('basic')" class="btn btn-outline-primary pricing-btn">
+                <i class="bi bi-credit-card me-2"></i>Choose Basic
+            </button>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6">
+        <div class="card pricing-card popular">
+            <h4 class="mb-3"><i class="bi bi-rocket text-success me-2"></i>Pro</h4>
+            <div class="pricing-price">$25<span>/month</span></div>
+            <p class="text-muted mb-4">For growing dental clinics</p>
+            
+            <ul class="pricing-features">
+                <li><i class="bi bi-check-circle-fill"></i> Up to 500 patients</li>
+                <li><i class="bi bi-check-circle-fill"></i> Appointment scheduling</li>
+                <li><i class="bi bi-check-circle-fill"></i> Full patient records</li>
+                <li><i class="bi bi-check-circle-fill"></i> Priority email support</li>
+                <li><i class="bi bi-check-circle-fill"></i> Billing & Invoicing</li>
+                <li><i class="bi bi-check-circle-fill"></i> Advanced analytics</li>
+                <li class="disabled"><i class="bi bi-x-circle-fill"></i> Multi-user access</li>
+            </ul>
+            
+            <button onclick="startCheckout('pro')" class="btn btn-primary pricing-btn">
+                <i class="bi bi-credit-card me-2"></i>Choose Pro
+            </button>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6">
+        <div class="card pricing-card">
+            <h4 class="mb-3"><i class="bi bi-building text-warning me-2"></i>Enterprise</h4>
+            <div class="pricing-price">$50<span>/month</span></div>
+            <p class="text-muted mb-4">For large dental organizations</p>
+            
+            <ul class="pricing-features">
+                <li><i class="bi bi-check-circle-fill"></i> Unlimited patients</li>
+                <li><i class="bi bi-check-circle-fill"></i> Appointment scheduling</li>
+                <li><i class="bi bi-check-circle-fill"></i> Full patient records</li>
+                <li><i class="bi bi-check-circle-fill"></i> 24/7 phone support</li>
+                <li><i class="bi bi-check-circle-fill"></i> Billing & Invoicing</li>
+                <li><i class="bi bi-check-circle-fill"></i> Advanced analytics</li>
+                <li><i class="bi bi-check-circle-fill"></i> Multi-user access</li>
+            </ul>
+            
+            <button onclick="startCheckout('enterprise')" class="btn btn-outline-warning pricing-btn">
+                <i class="bi bi-credit-card me-2"></i>Choose Enterprise
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12 text-center mb-4">
+        <h4><i class="bi bi-question-circle me-2"></i>Frequently Asked Questions</h4>
+    </div>
+    <div class="col-lg-6 mt-3">
+        <div class="card">
+            <div class="card-body">
+                <h6><i class="bi bi-arrow-repeat text-primary me-2"></i>Can I change plans later?</h6>
+                <p class="text-muted mb-0">Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mt-3">
+        <div class="card">
+            <div class="card-body">
+                <h6><i class="bi bi-credit-card text-primary me-2"></i>What payment methods do you accept?</h6>
+                <p class="text-muted mb-0">We accept all major credit cards, debit cards, and PayPal through our secure Stripe payment system.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mt-3">
+        <div class="card">
+            <div class="card-body">
+                <h6><i class="bi bi-gift text-primary me-2"></i>Is there a free trial?</h6>
+                <p class="text-muted mb-0">Yes! All plans come with a 14-day free trial. No credit card required to get started.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mt-3">
+        <div class="card">
+            <div class="card-body">
+                <h6><i class="bi bi-ban text-primary me-2"></i>Can I cancel anytime?</h6>
+                <p class="text-muted mb-0">Absolutely. Cancel anytime with no cancellation fees. Your data can be exported before cancellation.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const stripe = Stripe('{{ stripe_key }}');
+
+async function startCheckout(plan) {
+    try {
+        const response = await fetch('/subscription/api/create-checkout/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ plan: plan })
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

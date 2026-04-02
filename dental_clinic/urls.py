@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import render
+from django.http import JsonResponse
 from .api_urls import urlpatterns as api_urls
 
 urlpatterns = [
@@ -13,8 +15,29 @@ urlpatterns = [
     path("billing/", include("billing.urls")),
     path("subscription/", include("clinics.urls")),
     path("api/payments/", include("payments.urls")),
+    path("setup/", include("setup.urls")),
+    path("notifications/", include("notifications.urls")),
+    path(
+        "pricing/",
+        lambda request: render(
+            request, "pricing.html", {"stripe_key": settings.STRIPE_PUBLIC_KEY}
+        ),
+        name="pricing",
+    ),
+    path(
+        "payment-success/",
+        lambda request: render(request, "payment_success.html"),
+        name="payment_success",
+    ),
+    path(
+        "payment-cancel/",
+        lambda request: render(request, "payment_cancel.html"),
+        name="payment_cancel",
+    ),
     path("", include("dashboard.urls")),
 ]
+
+urlpatterns += api_urls
 
 urlpatterns += api_urls
 

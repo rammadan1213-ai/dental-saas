@@ -13,6 +13,8 @@ from django.http import JsonResponse
 from django.db.models import Q
 from .models import Patient, PatientDocument
 from .forms import PatientForm, PatientDocumentForm, PatientSearchForm
+from notifications.views import notify_new_patient
+from utils.permissions import check_patient_limit, get_plan_features
 
 
 class ClinicFilterMixin:
@@ -63,6 +65,11 @@ class PatientListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["search_form"] = PatientSearchForm(self.request.GET)
+        clinic = getattr(self.request.user, "clinic", None)
+        if clinic:
+            can_add, _, limit, current = check_patient_limit(self.request.user)
+            context["patient_limit"] = limit
+            context["patient_count"] = current
         return context
 
 
@@ -72,11 +79,38 @@ class PatientCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
     template_name = "patients/patient_form.html"
     success_url = reverse_lazy("patients:patient_list")
 
+    def get(self, request, *args, **kwargs):
+        can_add, message, limit, current = check_patient_limit(request.user)
+        if not can_add:
+            clinic = getattr(request.user, "clinic", None)
+            current_plan = "basic"
+            if clinic and hasattr(clinic, "subscription"):
+                current_plan = clinic.subscription.plan
+            return render(
+                request,
+                "upgrade_required.html",
+                {
+                    "title": "Patient Limit Reached",
+                    "message": message,
+                    "current_plan": current_plan,
+                    "target_plan": "Pro",
+                    "feature_name": "More Patients",
+                    "features": [
+                        f"{limit}+ Patients",
+                        "Priority Support",
+                        "Advanced Features",
+                    ],
+                },
+            )
+        return super().get(request, *args, **kwargs)
+
     def form_valid(self, form):
         clinic = getattr(self.request.user, "clinic", None)
         form.instance.clinic = clinic
+        response = super().form_valid(form)
+        notify_new_patient(self.request.user, form.instance)
         messages.success(self.request, "Patient created successfully.")
-        return super().form_valid(form)
+        return response
 
 
 class PatientUpdateView(

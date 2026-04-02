@@ -1,51 +1,61 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Appointments - Dental Clinic{% endblock %}
-{% block page_title %}Appointments{% endblock %}
+{% block title %}Appointments - Dental SaaS{% endblock %}
 
 {% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Appointments</h1>
+        <p class="page-subtitle">Manage patient appointments</p>
+    </div>
+    <div class="d-flex gap-3">
+        <a href="{% url 'appointments:appointment_calendar' %}" class="btn btn-outline-primary">
+            <i class="bi bi-calendar3-week me-2"></i>Calendar View
+        </a>
+        <a href="{% url 'appointments:appointment_create' %}" class="quick-action-btn">
+            <i class="bi bi-plus-lg me-2"></i>New Appointment
+        </a>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
-        <div class="row">
+        <div class="row align-items-center">
             <div class="col-md-6">
-                <h5 class="mb-0">Appointments</h5>
+                <span><i class="bi bi-calendar-event me-2"></i>Appointment List</span>
+                <span class="badge bg-primary ms-2">{{ page_obj.paginator.count|default:appointments|length }}</span>
             </div>
             <div class="col-md-6">
-                <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary float-end">
-                    <i class="bi bi-plus-circle"></i> New Appointment
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <form method="get" class="mb-4">
-            <div class="row">
-                <div class="col-md-3">
-                    <select name="status" class="form-control">
+                <form method="get" class="d-flex gap-2">
+                    <select name="status" class="form-select" style="width: 150px;">
                         <option value="">All Status</option>
                         {% for value, label in filter_form.status.field.choices %}
                         <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </div>
-                <div class="col-md-3">
-                    <select name="dentist" class="form-control">
-                        <option value="">All Dentists</option>
+                    <select name="priority" class="form-select" style="width: 150px;">
+                        <option value="">All Priority</option>
+                        {% for value, label in filter_form.priority.field.choices %}
+                        <option value="{{ value }}" {% if request.GET.priority == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-secondary w-100">Filter</button>
-                </div>
-                <div class="col-md-2">
-                    <a href="{% url 'appointments:appointment_calendar' %}" class="btn btn-info w-100">
-                        <i class="bi bi-calendar3"></i> Calendar
+                    <input type="date" name="date_from" class="form-control" style="width: 150px;" value="{{ request.GET.date_from }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if request.GET.status or request.GET.priority or request.GET.date_from %}
+                    <a href="{% url 'appointments:appointment_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
                     </a>
-                </div>
+                    {% endif %}
+                </form>
             </div>
-        </form>
-        
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if appointments %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover mb-0">
                 <thead>
                     <tr>
                         <th>Date & Time</th>
@@ -54,40 +64,63 @@
                         <th>Status</th>
                         <th>Priority</th>
                         <th>Reason</th>
-                        <th>Actions</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for appointment in appointments %}
                     <tr>
                         <td>
-                            <strong>{{ appointment.date }}</strong><br>
-                            <small>{{ appointment.start_time }} - {{ appointment.end_time }}</small>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="bi bi-calendar-event text-primary"></i>
+                                </div>
+                                <div>
+                                    <strong>{{ appointment.date|date:"M d, Y" }}</strong>
+                                    <br><small class="text-muted">{{ appointment.start_time|time:"H:i" }} - {{ appointment.end_time|time:"H:i" }}</small>
+                                </div>
+                            </div>
                         </td>
-                        <td>{{ appointment.patient.full_name }}</td>
-                        <td>{{ appointment.dentist.get_full_name|default:"Unassigned" }}</td>
                         <td>
-                            <span class="badge bg-{{ appointment.status }}">{{ appointment.get_status_display }}</span>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-3">
+                                    {{ appointment.patient.first_name|slice:":1" }}{{ appointment.patient.last_name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <a href="{% url 'patients:patient_detail' appointment.patient.pk %}" class="text-decoration-none">
+                                        <strong>{{ appointment.patient.full_name }}</strong>
+                                    </a>
+                                    <br><small class="text-muted">{{ appointment.patient.phone }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ appointment.dentist.get_full_name|default:"<span class='text-muted'>Unassigned</span>" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ appointment.status }}">{{ appointment.get_status_display }}</span>
                         </td>
                         <td>
-                            <span class="badge bg-{{ appointment.priority }}">{{ appointment.get_priority_display }}</span>
+                            {% if appointment.priority == 'high' %}
+                            <span class="badge bg-danger">High</span>
+                            {% elif appointment.priority == 'medium' %}
+                            <span class="badge bg-warning text-dark">Medium</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Low</span>
+                            {% endif %}
                         </td>
-                        <td>{{ appointment.reason|truncatechars:40 }}</td>
-                        <td>
-                            <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-sm btn-info">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{% url 'appointments:appointment_update' appointment.pk %}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="{% url 'appointments:appointment_delete' appointment.pk %}" class="btn btn-sm btn-danger delete-btn">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                        <td>{{ appointment.reason|truncatechars:35 }}</td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-sm btn-light" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'appointments:appointment_update' appointment.pk %}" class="btn btn-sm btn-light" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'appointments:appointment_delete' appointment.pk %}" class="btn btn-sm btn-light text-danger delete-btn" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
                         </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted">No appointments found</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -95,23 +128,41 @@
         </div>
         
         {% if page_obj.has_other_pages %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                </li>
-                {% endif %}
-                <li class="page-item active">
-                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                </li>
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <h5>No appointments found</h5>
+            <p>Schedule your first appointment to get started</p>
+            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>New Appointment
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>

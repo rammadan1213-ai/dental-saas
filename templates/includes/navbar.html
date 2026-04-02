@@ -1,8 +1,8 @@
 <style>
 .navbar-custom {
     background: #fff !important;
-    border-bottom: 1px solid #e9ecef;
-    padding: 15px 25px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 16px 24px;
 }
 
 .navbar-brand-custom {
@@ -10,69 +10,89 @@
     align-items: center;
     gap: 10px;
     font-weight: 700;
-    color: #1a1a2e;
+    font-size: 1.25rem;
+    color: #1f2937;
     text-decoration: none;
 }
 
 .navbar-brand-custom i {
-    color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     font-size: 1.5rem;
+}
+
+.navbar-brand-custom span {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .navbar-actions {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .nav-icon-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8f9fa;
-    color: #6c757d;
+    background: #f5f7fb;
+    color: #6b7280;
     border: none;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     position: relative;
+    text-decoration: none;
 }
 
 .nav-icon-btn:hover {
-    background: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #fff;
 }
 
 .nav-icon-btn .badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    font-size: 0.6rem;
+    top: -4px;
+    right: -4px;
+    font-size: 10px;
     padding: 3px 6px;
+    border-radius: 10px;
 }
 
 .search-box {
-    background: #f8f9fa;
-    border: none;
+    background: #f5f7fb;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
-    padding: 10px 15px;
-    width: 250px;
+    padding: 10px 16px;
+    width: 240px;
+    transition: var(--transition);
 }
 
 .search-box:focus {
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    outline: none;
 }
 
 .user-dropdown .dropdown-toggle {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 5px 15px 5px 5px;
-    background: #f8f9fa;
+    padding: 6px 14px 6px 6px;
+    background: #f5f7fb;
     border-radius: 30px;
-    border: none;
+    border: 1px solid #e5e7eb;
+    transition: var(--transition);
+}
+
+.user-dropdown .dropdown-toggle:hover {
+    border-color: var(--primary-color);
+    background: #fff;
 }
 
 .user-dropdown .dropdown-toggle::after {
@@ -80,8 +100,8 @@
 }
 
 .user-dropdown .user-avatar-sm {
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
@@ -89,30 +109,42 @@
     justify-content: center;
     color: #fff;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 13px;
+}
+
+.user-dropdown .user-name {
+    font-weight: 500;
+    color: #1f2937;
 }
 
 .user-dropdown .dropdown-menu {
     border: none;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-    border-radius: 15px;
-    padding: 10px;
-    min-width: 200px;
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 220px;
+    margin-top: 12px !important;
 }
 
 .user-dropdown .dropdown-item {
-    border-radius: 10px;
-    padding: 10px 15px;
-    margin-bottom: 5px;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    transition: var(--transition);
 }
 
 .user-dropdown .dropdown-item:hover {
-    background: #f8f9fa;
+    background: #f5f7fb;
 }
 
 .user-dropdown .dropdown-item i {
     width: 20px;
-    color: #6c757d;
+    color: #6b7280;
+}
+
+.user-dropdown .dropdown-divider {
+    margin: 8px 0;
+    border-color: #f3f4f6;
 }
 
 .quick-actions {
@@ -127,54 +159,104 @@
     border-radius: 10px;
     padding: 10px 20px;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .btn-quick-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.35);
     color: #fff;
+}
+
+.mobile-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    align-items: center;
+    justify-content: center;
+    background: #f5f7fb;
+    border: none;
+    font-size: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+    .mobile-toggle {
+        display: flex;
+    }
+    
+    .quick-actions {
+        display: none;
+    }
+    
+    .search-box {
+        width: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .user-dropdown .user-name {
+        display: none;
+    }
+    
+    .search-box {
+        width: 140px;
+    }
 }
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container-fluid px-4">
+        <button class="mobile-toggle me-3" id="sidebarToggle">
+            <i class="bi bi-list"></i>
+        </button>
+        
         <a class="navbar-brand-custom" href="{% url 'dashboard:home' %}">
             <i class="bi bi-plus-circle-fill"></i>
             <span>Dental SaaS</span>
         </a>
         
-        <div class="quick-actions d-none d-lg-flex">
-            <a href="{% url 'patients:patient_list' %}" class="btn btn-quick-action">
+        <div class="quick-actions d-none d-lg-flex mx-auto">
+            <a href="{% url 'patients:patient_create' %}" class="btn btn-quick-action">
                 <i class="bi bi-person-plus me-2"></i>
                 New Patient
+            </a>
+            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-quick-action">
+                <i class="bi bi-calendar-plus me-2"></i>
+                New Appointment
             </a>
         </div>
         
         <div class="navbar-actions">
-            <button class="nav-icon-btn d-lg-none" type="button">
-                <i class="bi bi-search"></i>
+            <input type="search" class="search-box" placeholder="Search patients, appointments...">
+            
+            <button class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                <i class="bi bi-moon-fill"></i>
             </button>
             
-            <button class="nav-icon-btn">
+            <a href="{% url 'notifications:notification_list' %}" class="nav-icon-btn">
                 <i class="bi bi-bell"></i>
-                <span class="badge bg-danger rounded-circle">3</span>
-            </button>
+                {% if unread_notifications_count > 0 %}
+                <span class="badge bg-danger">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
             
             <div class="dropdown user-dropdown">
                 <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <div class="user-avatar-sm">
                         {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
                     </div>
-                    <span class="d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span>
-                    <i class="bi bi-chevron-down ms-2 text-muted"></i>
+                    <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+                    <i class="bi bi-chevron-down ms-1 text-muted"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <div class="px-3 py-2 text-center">
+                        <div class="px-3 py-2">
                             <strong>{{ user.get_full_name|default:user.username }}</strong>
                             <br>
                             <small class="text-muted">{{ user.email }}</small>
+                            <br>
+                            <span class="badge bg-primary mt-1">{{ user.get_role_display }}</span>
                         </div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
@@ -202,3 +284,9 @@
         </div>
     </div>
 </nav>
+
+<script>
+document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+    document.querySelector('.sidebar').classList.toggle('active');
+});
+</script>

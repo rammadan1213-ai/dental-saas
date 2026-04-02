@@ -1,81 +1,113 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Patients - Dental Clinic{% endblock %}
-{% block page_title %}Patients{% endblock %}
+{% block title %}Patients - Dental SaaS{% endblock %}
 
 {% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Patients</h1>
+        <p class="page-subtitle">Manage your patient records</p>
+        {% if patient_limit %}
+        <span class="badge bg-{% if patient_count >= patient_limit %}danger{% else %}primary{% endif %}">
+            <i class="bi bi-people me-1"></i>{{ patient_count|default:0 }} / {{ patient_limit }}
+        </span>
+        {% endif %}
+    </div>
+    <a href="{% url 'patients:patient_create' %}" class="quick-action-btn">
+        <i class="bi bi-plus-lg me-2"></i>Add Patient
+    </a>
+</div>
+
 <div class="card">
     <div class="card-header">
-        <div class="row">
+        <div class="row align-items-center">
             <div class="col-md-6">
-                <h5 class="mb-0">Patient List</h5>
+                <span><i class="bi bi-people me-2"></i>Patient List</span>
+                <span class="badge bg-primary ms-2">{{ page_obj.paginator.count|default:patients|length }}</span>
             </div>
             <div class="col-md-6">
-                <a href="{% url 'patients:patient_create' %}" class="btn btn-primary float-end">
-                    <i class="bi bi-plus-circle"></i> Add Patient
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <form method="get" class="mb-4">
-            <div class="row">
-                <div class="col-md-4">
+                <form method="get" class="d-flex gap-2">
                     <input type="text" name="search" class="form-control" 
                            placeholder="Search patients..." value="{{ request.GET.search }}">
-                </div>
-                <div class="col-md-3">
-                    <select name="gender" class="form-control">
-                        <option value="">All Genders</option>
+                    <select name="gender" class="form-select" style="width: 150px;">
+                        <option value="">All</option>
                         <option value="male" {% if request.GET.gender == 'male' %}selected{% endif %}>Male</option>
                         <option value="female" {% if request.GET.gender == 'female' %}selected{% endif %}>Female</option>
                     </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-secondary w-100">Filter</button>
-                </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if request.GET.search or request.GET.gender %}
+                    <a href="{% url 'patients:patient_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </form>
             </div>
-        </form>
-        
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if patients %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Email</th>
-                        <th>Age</th>
-                        <th>Gender</th>
-                        <th>Actions</th>
+                        <th>Patient</th>
+                        <th>Contact</th>
+                        <th>Age / Gender</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for patient in patients %}
                     <tr>
                         <td>
-                            <a href="{% url 'patients:patient_detail' patient.pk %}">
-                                {{ patient.full_name }}
-                            </a>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-3">
+                                    {{ patient.first_name|slice:":1" }}{{ patient.last_name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <a href="{% url 'patients:patient_detail' patient.pk %}" class="text-decoration-none">
+                                        <strong>{{ patient.full_name }}</strong>
+                                    </a>
+                                    <br><small class="text-muted">ID: {{ patient.id }}</small>
+                                </div>
+                            </div>
                         </td>
-                        <td>{{ patient.phone }}</td>
-                        <td>{{ patient.email }}</td>
-                        <td>{{ patient.age }}</td>
-                        <td>{{ patient.get_gender_display }}</td>
                         <td>
-                            <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-sm btn-info">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{% url 'patients:patient_update' patient.pk %}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="{% url 'patients:patient_delete' patient.pk %}" class="btn btn-sm btn-danger delete-btn">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            <div><i class="bi bi-phone me-1 text-muted"></i> {{ patient.phone }}</div>
+                            {% if patient.email %}
+                            <div><small class="text-muted"><i class="bi bi-envelope me-1"></i> {{ patient.email }}</small></div>
+                            {% endif %}
                         </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">No patients found</td>
+                        <td>
+                            <div>{{ patient.age }} years</div>
+                            <div><small class="text-muted">{{ patient.get_gender_display }}</small></div>
+                        </td>
+                        <td>
+                            {% if patient.is_active %}
+                            <span class="status-badge status-completed">Active</span>
+                            {% else %}
+                            <span class="status-badge status-cancelled">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-sm btn-light" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'patients:patient_update' patient.pk %}" class="btn btn-sm btn-light" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'appointments:appointment_create' %}?patient={{ patient.pk }}" class="btn btn-sm btn-light text-success" title="Book Appointment">
+                                    <i class="bi bi-calendar-plus"></i>
+                                </a>
+                                <a href="{% url 'patients:patient_delete' patient.pk %}" class="btn btn-sm btn-light text-danger delete-btn" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -83,25 +115,49 @@
         </div>
         
         {% if page_obj.has_other_pages %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                </li>
-                {% endif %}
-                
-                <li class="page-item active">
-                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                </li>
-                
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-people"></i>
+            <h5>No patients found</h5>
+            <p>Start by adding your first patient to the system</p>
+            <a href="{% url 'patients:patient_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Add Patient
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>

@@ -1,160 +1,293 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Dashboard - Dental Clinic{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Dashboard - Dental SaaS{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="stat-card primary">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-value">{{ total_patients }}</div>
-                        <div class="stat-label">Total Patients</div>
-                    </div>
-                    <i class="bi bi-people-fill stat-icon"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="stat-card success">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-value">{{ total_appointments }}</div>
-                        <div class="stat-label">Today's Appointments</div>
-                    </div>
-                    <i class="bi bi-calendar-check stat-icon"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="stat-card warning">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-value">${{ total_revenue|floatformat:2 }}</div>
-                        <div class="stat-label">Total Revenue</div>
-                    </div>
-                    <i class="bi bi-currency-dollar stat-icon"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="stat-card info">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-value">{{ total_treatments }}</div>
-                        <div class="stat-label">Total Treatments</div>
-                    </div>
-                    <i class="bi bi-bandaid stat-icon"></i>
-                </div>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Welcome back, {{ request.user.get_full_name|default:request.user.username }}</p>
+    </div>
+    <div class="d-flex gap-3">
+        <a href="{% url 'patients:patient_create' %}" class="btn btn-outline-primary">
+            <i class="bi bi-person-plus me-2"></i>New Patient
+        </a>
+        <a href="{% url 'appointments:appointment_create' %}" class="quick-action-btn">
+            <i class="bi bi-plus-lg me-2"></i>New Appointment
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card primary">
+            <i class="bi bi-people-fill stat-icon"></i>
+            <div class="stat-value">{{ total_patients }}</div>
+            <div class="stat-label">Total Patients</div>
+            <div class="stat-trend up">
+                <i class="bi bi-arrow-up me-1"></i>{{ total_patients_this_month }} new this month
             </div>
         </div>
     </div>
     
-    <div class="row mt-4">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-calendar-event"></i> Upcoming Appointments Today
-                    <a href="{% url 'appointments:appointment_list' %}" class="btn btn-sm btn-primary float-end">
-                        View All
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card success">
+            <i class="bi bi-calendar-check-fill stat-icon"></i>
+            <div class="stat-value">{{ total_appointments }}</div>
+            <div class="stat-label">Today's Appointments</div>
+            <div class="stat-trend up">
+                <i class="bi bi-check2-circle me-1"></i>{{ completed_appointments }} completed
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card warning">
+            <i class="bi bi-currency-dollar stat-icon"></i>
+            <div class="stat-value">${{ total_revenue|floatformat:0 }}</div>
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-trend up">
+                <i class="bi bi-graph-up me-1"></i>${{ revenue_this_month|floatformat:0 }} this month
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card info">
+            <i class="bi bi-bandaid-fill stat-icon"></i>
+            <div class="stat-value">{{ total_treatments }}</div>
+            <div class="stat-label">Total Treatments</div>
+            <div class="stat-trend">
+                <i class="bi bi-clock me-1"></i>{{ pending_appointments }} pending
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-event me-2"></i>Upcoming Appointments Today</span>
+                <a href="{% url 'appointments:appointment_list' %}" class="btn btn-sm btn-outline-primary">
+                    View All <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Time</th>
+                                <th>Dentist</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in upcoming_appointments %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-3">
+                                            {{ appointment.patient.first_name|slice:":1" }}{{ appointment.patient.last_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ appointment.patient.full_name }}</strong>
+                                            <br><small class="text-muted">{{ appointment.patient.phone }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ appointment.start_time|time:"H:i" }} - {{ appointment.end_time|time:"H:i" }}</td>
+                                <td>{{ appointment.dentist.get_full_name|default:"Unassigned" }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ appointment.status }}">
+                                        {{ appointment.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ appointment.reason|truncatechars:25 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-calendar-x"></i>
+                    <h5>No appointments today</h5>
+                    <p>Schedule your first appointment to get started</p>
+                    <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>New Appointment
                     </a>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Patient</th>
-                                    <th>Time</th>
-                                    <th>Dentist</th>
-                                    <th>Status</th>
-                                    <th>Reason</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for appointment in upcoming_appointments %}
-                                <tr>
-                                    <td>{{ appointment.patient.full_name }}</td>
-                                    <td>{{ appointment.start_time }} - {{ appointment.end_time }}</td>
-                                    <td>{{ appointment.dentist.get_full_name|default:"Unassigned" }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ appointment.status|default:'secondary' }}">
-                                            {{ appointment.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ appointment.reason|truncatechars:30 }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">No upcoming appointments today</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person-plus me-2"></i>Recent Patients
+            </div>
+            <div class="card-body p-0">
+                {% if recent_patients %}
+                <div class="list-group list-group-flush">
+                    {% for patient in recent_patients %}
+                    <a href="{% url 'patients:patient_detail' patient.id %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <div class="avatar-sm me-3">{{ patient.first_name|slice:":1" }}{{ patient.last_name|slice:":1" }}</div>
+                        <div>
+                            <strong>{{ patient.full_name }}</strong>
+                            <br><small class="text-muted">{{ patient.phone }}</small>
+                        </div>
+                        <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    </a>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No recent patients</p>
+                </div>
+                {% endif %}
             </div>
         </div>
         
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-person-plus"></i> Recent Patients
-                </div>
-                <div class="card-body">
-                    {% for patient in recent_patients %}
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary rounded-circle p-2 me-3">
-                            <i class="bi bi-person text-white"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold">{{ patient.full_name }}</div>
-                            <small class="text-muted">{{ patient.phone }}</small>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted text-center">No recent patients</p>
-                    {% endfor %}
-                </div>
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart me-2"></i>Quick Stats
             </div>
-            
-            <div class="card mt-3">
-                <div class="card-header">
-                    <i class="bi bi-graph-up"></i> Quick Stats
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <span class="text-muted">New Patients (Month)</span>
+                    <strong class="text-success">{{ total_patients_this_month }}</strong>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>New Patients (This Month)</span>
-                            <strong>{{ total_patients_this_month }}</strong>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Pending Appointments</span>
-                            <strong>{{ pending_appointments }}</strong>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Revenue (This Month)</span>
-                            <strong>${{ revenue_this_month|floatformat:2 }}</strong>
-                        </div>
-                    </div>
-                    <div class="mb-0">
-                        <div class="d-flex justify-content-between">
-                            <span>Outstanding Amount</span>
-                            <strong>${{ outstanding_amount|floatformat:2 }}</strong>
-                        </div>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <span class="text-muted">Pending Appointments</span>
+                    <strong class="text-warning">{{ pending_appointments }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <span class="text-muted">Revenue (Month)</span>
+                    <strong class="text-success">${{ revenue_this_month|floatformat:2 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">Outstanding Amount</span>
+                    <strong class="text-danger">${{ outstanding_amount|floatformat:2 }}</strong>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart me-2"></i>Appointments Overview
+            </div>
+            <div class="card-body">
+                <canvas id="appointmentsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>Revenue Trend
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartColors = {
+        primary: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#667eea',
+        success: getComputedStyle(document.documentElement).getPropertyValue('--success-color').trim() || '#10b981',
+        warning: getComputedStyle(document.documentElement).getPropertyValue('--warning-color').trim() || '#f59e0b',
+        info: getComputedStyle(document.documentElement).getPropertyValue('--info-color').trim() || '#3b82f6',
+    };
+    
+    const appointmentsCtx = document.getElementById('appointmentsChart').getContext('2d');
+    new Chart(appointmentsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Appointments',
+                data: [12, 19, 15, 8, 14, 6, 3],
+                backgroundColor: [
+                    chartColors.primary + 'cc',
+                    chartColors.success + 'cc',
+                    chartColors.warning + 'cc',
+                    chartColors.info + 'cc',
+                    chartColors.primary + 'cc',
+                    chartColors.success + 'cc',
+                    chartColors.warning + 'cc'
+                ],
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f3f4f6' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Revenue',
+                data: [2500, 3800, 3200, 4500, 5200, 6100],
+                borderColor: chartColors.success,
+                backgroundColor: chartColors.success + '20',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f3f4f6' },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
