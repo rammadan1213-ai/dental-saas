@@ -202,6 +202,7 @@
             </a>
         </li>
         
+        {% if not user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'patient' in request.path %}active{% endif %}" href="{% url 'patients:patient_list' %}">
                 <i class="bi bi-people-fill"></i>
@@ -236,12 +237,14 @@
             </a>
             {% endif %}
         </li>
+        {% endif %}
     </ul>
     
     <div class="sidebar-divider"></div>
     
     <div class="sidebar-section">Views</div>
     <ul class="nav flex-column">
+        {% if not user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'calendar' in request.path %}active{% endif %}" href="{% url 'appointments:appointment_calendar' %}">
                 <i class="bi bi-calendar3-week"></i>
@@ -286,20 +289,23 @@
             </a>
             {% endif %}
         </li>
+        {% endif %}
     </ul>
     
     <div class="sidebar-divider"></div>
     
     <div class="sidebar-section">Management</div>
     <ul class="nav flex-column">
-        {% if user.is_admin_user %}
+        {% if user.is_admin_user or user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'user' in request.path %}active{% endif %}" href="{% url 'accounts:user_list' %}">
                 <i class="bi bi-person-badge"></i>
                 Users
             </a>
         </li>
+        {% endif %}
         
+        {% if user.is_admin_user or user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'audit' in request.path %}active{% endif %}" href="{% url 'accounts:audit_log_list' %}">
                 <i class="bi bi-shield-check"></i>
@@ -310,19 +316,21 @@
         
         {% if user.is_superuser %}
         <li class="nav-item">
-            <a class="nav-link saaS-link {% if 'superadmin' in request.path %}active{% endif %}" href="{% url 'accounts:superadmin_dashboard' %}">
+            <a class="nav-link saaS-link {% if 'superadmin' in request.path or 'admin/dashboard' in request.path %}active{% endif %}" href="{% url 'accounts:superadmin_dashboard' %}">
                 <i class="bi bi-gem"></i>
-                SaaS Admin
+                Super Admin
             </a>
         </li>
         {% endif %}
         
+        {% if user.is_admin_user or user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'subscription' in request.path or 'pricing' in request.path %}active{% endif %}" href="{% url 'clinics:subscription_manage' %}">
                 <i class="bi bi-credit-card"></i>
                 Subscription
             </a>
         </li>
+        {% endif %}
     </ul>
     
     <div class="sidebar-divider"></div>
@@ -351,7 +359,13 @@
             </div>
             <div class="user-info">
                 <h6>{{ user.get_full_name|default:user.username }}</h6>
-                <small>{{ user.get_role_display }}</small>
+                <small>
+                    {% if user.is_superuser %}
+                    Super Admin
+                    {% else %}
+                    {{ user.get_role_display }}
+                    {% endif %}
+                </small>
             </div>
         </div>
         {% if user.clinic %}
@@ -359,6 +373,13 @@
             <span class="subscription-badge w-100 text-center d-block">
                 <i class="bi bi-star-fill me-1"></i>
                 {{ user.clinic.subscription.plan|title }}
+            </span>
+        </div>
+        {% elif user.is_superuser %}
+        <div class="mt-3">
+            <span class="subscription-badge w-100 text-center d-block bg-warning">
+                <i class="bi bi-gem me-1"></i>
+                Super Admin
             </span>
         </div>
         {% endif %}

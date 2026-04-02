@@ -18,6 +18,9 @@ urlpatterns = [
     ),
     path("profile/", views.UserProfileView.as_view(), name="profile"),
     path(
+        "clinic/settings/", views.ClinicSettingsView.as_view(), name="clinic_settings"
+    ),
+    path(
         "password-reset/",
         views.CustomPasswordResetView.as_view(),
         name="password_reset",
@@ -55,5 +58,10 @@ urlpatterns = [
         "admin/update-subscription/<int:clinic_id>/",
         views.update_clinic_subscription,
         name="update_subscription",
+    ),
+    path(
+        "switch-to-clinic/",
+        views.switch_to_clinic_view,
+        name="switch_to_clinic",
     ),
 ]

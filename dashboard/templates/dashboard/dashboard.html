@@ -3,20 +3,100 @@
 {% block title %}Dashboard - Dental SaaS{% endblock %}
 
 {% block content %}
+{% if is_superadmin %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Dashboard</h1>
-        <p class="page-subtitle">Welcome back, {{ request.user.get_full_name|default:request.user.username }}</p>
+        <h1 class="page-title">Super Admin Dashboard</h1>
+        <p class="page-subtitle">System-wide overview and management</p>
     </div>
     <div class="d-flex gap-3">
-        <a href="{% url 'patients:patient_create' %}" class="btn btn-outline-primary">
-            <i class="bi bi-person-plus me-2"></i>New Patient
-        </a>
-        <a href="{% url 'appointments:appointment_create' %}" class="quick-action-btn">
-            <i class="bi bi-plus-lg me-2"></i>New Appointment
-        </a>
+        <form method="post" action="{% url 'accounts:switch_to_clinic' %}" class="d-inline">
+            {% csrf_token %}
+            <select name="clinic_id" class="form-select" onchange="this.form.submit()" style="width: auto; display: inline-block;">
+                <option value="">-- Select Clinic --</option>
+                {% for clinic in all_clinics %}
+                <option value="{{ clinic.id }}">{{ clinic.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
     </div>
 </div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card primary">
+            <i class="bi bi-hospital-fill stat-icon"></i>
+            <div class="stat-value">{{ total_clinics }}</div>
+            <div class="stat-label">Total Clinics</div>
+            <div class="stat-trend up">
+                <i class="bi bi-arrow-up me-1"></i>{{ active_clinics }} active
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card success">
+            <i class="bi bi-people-fill stat-icon"></i>
+            <div class="stat-value">{{ total_patients }}</div>
+            <div class="stat-label">Total Patients</div>
+            <div class="stat-trend up">
+                <i class="bi bi-check2-circle me-1"></i>System wide
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card warning">
+            <i class="bi bi-currency-dollar stat-icon"></i>
+            <div class="stat-value">${{ revenue_this_month|floatformat:0 }}</div>
+            <div class="stat-label">Revenue This Month</div>
+            <div class="stat-trend up">
+                <i class="bi bi-graph-up me-1"></i>All clinics
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card info">
+            <i class="bi bi-calendar-check-fill stat-icon"></i>
+            <div class="stat-value">{{ pending_appointments }}</div>
+            <div class="stat-label">Pending Appointments</div>
+            <div class="stat-trend">
+                <i class="bi bi-clock me-1"></i>Today's total
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-gem me-2"></i>Quick Actions</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{% url 'accounts:superadmin_dashboard' %}" class="btn btn-outline-primary w-100 py-3">
+                            <i class="bi bi-gem me-2"></i>Manage All Clinics
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-success w-100 py-3">
+                            <i class="bi bi-people me-2"></i>Manage Users
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'accounts:audit_log_list' %}" class="btn btn-outline-warning w-100 py-3">
+                            <i class="bi bi-shield-check me-2"></i>View Audit Logs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
 
 <div class="row g-4 mb-4">
     <div class="col-md-6 col-xl-3">
@@ -289,5 +369,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script>
+{% endif %}
 {% endblock %}

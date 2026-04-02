@@ -70,7 +70,12 @@ class LogoutView(View):
 
 class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_admin_user
+        return self.request.user.is_admin_user or self.request.user.is_superuser
+
+
+class SuperAdminRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
 
 
 class StaffRequiredMixin(UserPassesTestMixin):
@@ -161,7 +166,7 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "accounts/password_reset_complete.html"
 
 
-class AuditLogListView(AdminRequiredMixin, ListView):
+class AuditLogListView(SuperAdminRequiredMixin, ListView):
     model = AuditLog
     template_name = "accounts/audit_log_list.html"
     context_object_name = "logs"
@@ -341,3 +346,62 @@ class ClinicDetailView(LoginRequiredMixin, DetailView):
         context["appointment_count"] = self.object.appointments.count()
         context["invoice_count"] = self.object.invoices.count()
         return context
+
+
+class ClinicSettingsView(LoginRequiredMixin, View):
+    template_name = "accounts/clinic_settings.html"
+
+    def get(self, request):
+        clinic = getattr(request.user, "clinic", None)
+        if not clinic:
+            messages.error(request, "No clinic associated with your account.")
+            return redirect("dashboard:home")
+
+        context = {
+            "clinic": clinic,
+            "patient_count": clinic.patients.count()
+            if hasattr(clinic, "patients")
+            else 0,
+            "user_count": clinic.users.count(),
+            "patient_percentage": min(
+                100,
+                (clinic.patients.count() / clinic.subscription.patient_limit * 100)
+                if clinic.subscription
+                else 0,
+            ),
+            "user_percentage": min(100, (clinic.users.count() / 5 * 100)),
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        clinic = getattr(request.user, "clinic", None)
+        if not clinic:
+            return redirect("dashboard:home")
+
+        clinic.name = request.POST.get("name", clinic.name)
+        clinic.email = request.POST.get("email", clinic.email)
+        clinic.phone = request.POST.get("phone", clinic.phone)
+        clinic.address = request.POST.get("address", clinic.address)
+        clinic.save()
+
+        messages.success(request, "Clinic settings updated successfully!")
+        return redirect("accounts:clinic_settings")
+
+
+class SwitchToClinicView(LoginRequiredMixin, View):
+    def post(self, request):
+        if not request.user.is_superuser:
+            messages.error(request, "Access denied.")
+            return redirect("dashboard:home")
+
+        clinic_id = request.POST.get("clinic_id")
+        if not clinic_id:
+            return redirect("dashboard:home")
+
+        from clinics.models import Clinic
+
+        clinic = get_object_or_404(Clinic, id=clinic_id)
+
+        request.session["selected_clinic_id"] = clinic.id
+        messages.success(request, f"Switched to {clinic.name}")
+        return redirect("dashboard:home")

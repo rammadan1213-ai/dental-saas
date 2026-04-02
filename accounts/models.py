@@ -45,10 +45,11 @@ class User(AbstractUser):
     def is_receptionist(self):
         return self.role == self.Role.RECEPTIONIST
 
+    @property
+    def is_superadmin(self):
+        return self.is_superuser
+
     def save(self, *args, **kwargs):
-        if self.role == self.Role.ADMIN:
-            self.is_staff = True
-            self.is_superuser = True
         super().save(*args, **kwargs)
 
 
@@ -66,6 +67,12 @@ class AuditLog(models.Model):
     description = models.TextField()
     ip_address = models.GenericIPAddressField(null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    clinic = models.ForeignKey(
+        "clinics.Clinic",
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="audit_logs",
+    )
 
     class Meta:
         ordering = ["-timestamp"]

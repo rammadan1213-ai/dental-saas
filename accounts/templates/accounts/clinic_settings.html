@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Clinic Settings - Dental SaaS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Clinic Settings</h1>
+        <p class="page-subtitle">Manage your clinic information</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-building me-2"></i>Clinic Information
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Clinic Name</label>
+                        <input type="text" name="name" class="form-control" 
+                               value="{{ clinic.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" 
+                               value="{{ clinic.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-control" 
+                               value="{{ clinic.phone }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="3">{{ clinic.address }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check2 me-2"></i>Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-credit-card me-2"></i>Subscription
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <span class="badge bg-{% if clinic.subscription.plan == 'enterprise' %}warning{% elif clinic.subscription.plan == 'pro' %}success{% else %}primary{% endif %} p-2" style="font-size: 1rem;">
+                        {{ clinic.subscription.get_plan_display }}
+                    </span>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Status</p>
+                    <strong class="{% if clinic.subscription.is_active %}text-success{% else %}text-danger{% endif %}">
+                        {% if clinic.subscription.is_active %}Active{% else %}Inactive{% endif %}
+                    </strong>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Expires</p>
+                    <strong>{{ clinic.subscription.expiry_date|date:"M d, Y" }}</strong>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Patient Limit</p>
+                    <strong>{{ clinic.subscription.patient_limit }}{% if clinic.subscription.plan == 'enterprise' %}+{% endif %}</strong>
+                </div>
+                
+                <hr>
+                
+                <a href="{% url 'pricing' %}" class="btn btn-warning w-100">
+                    <i class="bi bi-rocket me-2"></i>Upgrade Plan
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-people me-2"></i>Usage
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Patients</span>
+                        <span>{{ patient_count }} / {{ clinic.subscription.patient_limit }}</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-{% if patient_percentage > 80 %}danger{% elif patient_percentage > 60 %}warning{% else %}success{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ patient_percentage }}%" 
+                             aria-valuenow="{{ patient_percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Users</span>
+                        <span>{{ user_count }} / {% if clinic.subscription.plan == 'enterprise' %}Unlimited{% else %}5{% endif %}</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" 
+                             role="progressbar" 
+                             style="width: {{ user_percentage }}%" 
+                             aria-valuenow="{{ user_percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                
+                {% if clinic.subscription.plan == 'basic' %}
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Upgrade to Pro for billing, reports, and more users.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

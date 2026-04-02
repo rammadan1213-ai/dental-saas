@@ -6,7 +6,7 @@ from django.db.models.functions import TruncMonth, TruncDay, TruncWeek
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import json
-from accounts.models import User
+from accounts.models import User as DjangoUser
 from patients.models import Patient
 from appointments.models import Appointment
 from treatments.models import Treatment
@@ -15,7 +15,17 @@ from billing.models import Invoice, Payment
 
 class ClinicFilterMixin:
     def get_clinic(self):
-        return getattr(self.request.user, "clinic", None)
+        user = self.request.user
+
+        if user.is_superuser:
+            selected_id = self.request.session.get("selected_clinic_id")
+            if selected_id:
+                from clinics.models import Clinic
+
+                return Clinic.objects.filter(id=selected_id).first()
+            return None
+
+        return getattr(user, "clinic", None)
 
     def get_queryset_filtered(self, queryset):
         clinic = self.get_clinic()
@@ -29,8 +39,37 @@ class DashboardView(LoginRequiredMixin, ClinicFilterMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        clinic = self.get_clinic()
 
+        if self.request.user.is_superuser:
+            return self.get_superadmin_context(context)
+
+        clinic = self.get_clinic()
+        return self.get_clinic_context(context, clinic)
+
+    def get_superadmin_context(self, context):
+        from clinics.models import Clinic, Subscription
+
+        today = datetime.now().date()
+        month_start = today.replace(day=1)
+
+        context["total_clinics"] = Clinic.objects.count()
+        context["active_clinics"] = Clinic.objects.filter(is_active=True).count()
+        context["total_patients"] = Patient.objects.filter(is_active=True).count()
+        context["total_users"] = DjangoUser.objects.count()
+        context["pending_appointments"] = Appointment.objects.filter(
+            date=today, status__in=["pending", "confirmed"]
+        ).count()
+        context["revenue_this_month"] = (
+            Invoice.objects.filter(issue_date__gte=month_start).aggregate(
+                Sum("amount_paid")
+            )["amount_paid__sum"]
+            or 0
+        )
+        context["is_superadmin"] = True
+        context["all_clinics"] = Clinic.objects.all()[:20]
+        return context
+
+    def get_clinic_context(self, context, clinic):
         today = datetime.now().date()
         month_start = today.replace(day=1)
 

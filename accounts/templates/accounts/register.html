@@ -1,79 +1,204 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}Register - Dental SaaS{% endblock %}
 
-{% block title %}Register - Dental Clinic SaaS{% endblock %}
+{% block extra_css %}
+<style>
+.register-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-body p-5">
-                    <h2 class="text-center mb-4">Start Your Free Trial</h2>
-                    <p class="text-center text-muted mb-4">Create your dental clinic account</p>
-                    
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
-                    
-                    <form method="post" action="{% url 'accounts:register' %}">
-                        {% csrf_token %}
-                        
-                        <h5 class="mb-3">Clinic Information</h5>
-                        <div class="mb-3">
-                            <label for="clinic_name" class="form-label">Clinic Name</label>
-                            <input type="text" class="form-control" id="clinic_name" name="clinic_name" required>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <h5 class="mb-3">Owner Information</h5>
-                        <div class="mb-3">
-                            <label for="owner_name" class="form-label">Your Name</label>
-                            <input type="text" class="form-control" id="owner_name" name="owner_name" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" minlength="8" required>
-                            <small class="text-muted">Minimum 8 characters</small>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="password_confirm" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Create Clinic Account</button>
-                        </div>
-                    </form>
-                    
-                    <div class="text-center mt-4">
-                        <p class="text-muted">
-                            Already have an account? <a href="{% url 'accounts:login' %}">Login here</a>
-                        </p>
+.register-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    max-width: 520px;
+    width: 100%;
+}
+
+.register-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.register-header h2 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.register-header p {
+    margin: 10px 0 0;
+    opacity: 0.9;
+}
+
+.register-body {
+    padding: 40px;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.btn-register {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 14px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.features-list {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.features-list h6 {
+    color: #374151;
+    margin-bottom: 12px;
+}
+
+.features-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.features-list li {
+    padding: 6px 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.features-list li i {
+    color: #10b981;
+    margin-right: 8px;
+}
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <h2><i class="bi bi-plus-circle-fill me-2"></i>Dental SaaS</h2>
+            <p>Start your 14-day free trial</p>
+        </div>
+        
+        <div class="register-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" action="{% url 'accounts:register' %}" id="registerForm">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="clinic_name" class="form-label">
+                        <i class="bi bi-building me-1"></i>Clinic Name
+                    </label>
+                    <input type="text" class="form-control" id="clinic_name" name="clinic_name" 
+                           placeholder="Enter your clinic name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="owner_name" class="form-label">
+                        <i class="bi bi-person me-1"></i>Your Name
+                    </label>
+                    <input type="text" class="form-control" id="owner_name" name="owner_name" 
+                           placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope me-1"></i>Email Address
+                    </label>
+                    <input type="email" class="form-control" id="email" name="email" 
+                           placeholder="Enter your email" required>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-lock me-1"></i>Password
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="Min 8 characters" minlength="8" required>
                     </div>
-                    
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6>What you get with your free trial:</h6>
-                        <ul class="mb-0 small">
-                            <li>14-day free trial on any plan</li>
-                            <li>Full access to all features</li>
-                            <li>No credit card required</li>
-                            <li>Cancel anytime</li>
-                        </ul>
+                    <div class="col-md-6 mb-3">
+                        <label for="password_confirm" class="form-label">
+                            <i class="bi bi-lock-fill me-1"></i>Confirm
+                        </label>
+                        <input type="password" class="form-control" id="password_confirm" 
+                               name="password_confirm" placeholder="Confirm password" required>
                     </div>
                 </div>
+                
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="terms" required>
+                        <label class="form-check-label small text-muted" for="terms">
+                            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-register w-100">
+                    <i class="bi bi-rocket me-2"></i>Create Free Account
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    Already have an account? 
+                    <a href="{% url 'accounts:login' %}" class="text-primary fw-bold">Login here</a>
+                </p>
+            </div>
+            
+            <div class="features-list">
+                <h6><i class="bi bi-gift me-1"></i>What you get with your trial:</h6>
+                <ul>
+                    <li><i class="bi bi-check-circle-fill"></i>14-day free trial on any plan</li>
+                    <li><i class="bi bi-check-circle-fill"></i>Full access to all features</li>
+                    <li><i class="bi bi-check-circle-fill"></i>No credit card required</li>
+                    <li><i class="bi bi-check-circle-fill"></i>Cancel anytime, no questions asked</li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('password_confirm').value;
+    
+    if (password !== confirm) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+    }
+});
+</script>
 {% endblock %}

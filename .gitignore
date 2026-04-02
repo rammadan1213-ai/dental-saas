@@ -1,43 +1,22 @@
-# Python
+# Django
+*.pyc
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+*.log
+local_settings.py
 
 # Virtual Environment
 venv/
 env/
-ENV/
-env.bak/
-venv.bak/
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-/media
-/staticfiles
-
-# Static files
-*.css.map
-*.scss
+.env
+.venv
 
 # IDE
 .vscode/
@@ -50,20 +29,42 @@ db.sqlite3-journal
 .DS_Store
 Thumbs.db
 
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Testing
-.coverage
+# Coverage
 htmlcov/
+.coverage
+.coverage.*
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
 .pytest_cache/
-.mypy_cache/
 
-# Distribution
-*.whl
+# Translations
+*.mo
+*.pot
 
-# Logs
-logs/
-*.log
+# IDE
+.vscode/
+.idea/
+
+# Static files collected
+/static/
