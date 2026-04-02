@@ -106,6 +106,45 @@ def create_superadmin(request):
     return render(request, "setup/create_superadmin.html")
 
 
+def quick_create_superadmin(request):
+    """Quick create super admin without form"""
+    username = "eng.abdulrahem"
+    password = "hagaag13"
+
+    if User.objects.filter(username=username).exists():
+        messages.info(request, "Super admin already exists!")
+    else:
+        clinic = Clinic.objects.create(name="Main Dental Clinic", owner=None)
+
+        admin = User.objects.create_user(
+            username=username,
+            email="eng.abdulrahem@example.com",
+            password=password,
+            first_name="Abdulrahem",
+            last_name="Engineer",
+            role="admin",
+            is_staff=True,
+            is_superuser=True,
+            clinic=clinic,
+        )
+
+        clinic.owner = admin
+        clinic.save()
+
+        Subscription.objects.create(
+            clinic=clinic,
+            plan="enterprise",
+            is_active=True,
+            expiry_date=date.today() + timedelta(days=365),
+        )
+
+        messages.success(
+            request, f"Super admin created! Username: {username}, Password: {password}"
+        )
+
+    return redirect("accounts:login")
+
+
 def create_sample_data(clinic, admin_user):
     """Create sample patients, appointments, etc."""
     from django.utils import timezone

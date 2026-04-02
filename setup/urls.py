@@ -4,4 +4,9 @@ from . import views
 urlpatterns = [
     path("setup/", views.setup_view, name="setup"),
     path("create-superadmin/", views.create_superadmin, name="create_superadmin"),
+    path(
+        "quick-create-admin/",
+        views.quick_create_superadmin,
+        name="quick_create_superadmin",
+    ),
 ]
