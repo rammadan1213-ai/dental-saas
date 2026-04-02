@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.shortcuts import render
 from django.http import JsonResponse
 from .api_urls import urlpatterns as api_urls
+from setup.views import quick_create_superadmin
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -17,6 +18,9 @@ urlpatterns = [
     path("api/payments/", include("payments.urls")),
     path("setup/", include("setup.urls")),
     path("notifications/", include("notifications.urls")),
+    path(
+        "quick-create-admin/", quick_create_superadmin, name="quick_create_superadmin"
+    ),
     path(
         "pricing/",
         lambda request: render(
