@@ -4,119 +4,53 @@
     <meta charset="UTF-8">
     <title>Invoice {{ invoice.invoice_number }}</title>
     <style>
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            margin: 40px;
-            color: #333;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 20px;
-        }
-        .header h1 {
-            color: #667eea;
-            margin: 0;
-        }
-        .invoice-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-        .invoice-details, .patient-details {
-            width: 45%;
-        }
-        .invoice-details h3, .patient-details h3 {
-            color: #667eea;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-        th {
-            background-color: #667eea;
-            color: white;
-            padding: 10px;
-            text-align: left;
-        }
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .totals {
-            text-align: right;
-            margin-top: 20px;
-        }
-        .totals table {
-            width: 300px;
-            margin-left: auto;
-        }
-        .totals td {
-            border: none;
-        }
-        .totals .final-total {
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .footer {
-            margin-top: 50px;
-            text-align: center;
-            color: #666;
-            font-size: 12px;
-        }
-        .status {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        .status-paid { background-color: #28a745; color: white; }
-        .status-pending { background-color: #ffc107; color: #333; }
-        .status-overdue { background-color: #dc3545; color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Helvetica, Arial, sans-serif; margin: 40px; color: #333; font-size: 12px; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #667eea; padding-bottom: 15px; }
+        .header h1 { color: #667eea; margin: 0; font-size: 24px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .col { width: 48%; }
+        h3 { color: #667eea; border-bottom: 1px solid #ddd; padding-bottom: 5px; font-size: 14px; margin-bottom: 10px; }
+        p { margin-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: #667eea; color: white; padding: 8px; text-align: left; font-size: 11px; }
+        td { padding: 8px; border-bottom: 1px solid #ddd; font-size: 11px; }
+        .totals { text-align: right; margin-top: 20px; }
+        .totals table { width: 200px; margin-left: auto; }
+        .totals td { border: none; padding: 3px; }
+        .final-total { font-size: 14px; font-weight: bold; color: #667eea; }
+        .footer { margin-top: 40px; text-align: center; color: #666; font-size: 10px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🦷 Dental Clinic Invoice</h1>
-        <p>Professional Dental Care & Services</p>
+        <h1>Dental Clinic Invoice</h1>
     </div>
     
-    <div class="invoice-info">
-        <div class="invoice-details">
+    <div class="row">
+        <div class="col">
             <h3>Invoice Details</h3>
-            <p><strong>Invoice Number:</strong> {{ invoice.invoice_number }}</p>
-            <p><strong>Issue Date:</strong> {{ invoice.issue_date }}</p>
-            <p><strong>Due Date:</strong> {{ invoice.due_date }}</p>
-            <p>
-                <strong>Status:</strong> 
-                <span class="status status-{{ invoice.status }}">
-                    {{ invoice.get_status_display }}
-                </span>
-            </p>
+            <p><strong>Invoice:</strong> {{ invoice.invoice_number }}</p>
+            <p><strong>Date:</strong> {{ invoice.issue_date }}</p>
+            <p><strong>Due:</strong> {{ invoice.due_date }}</p>
+            <p><strong>Status:</strong> {{ invoice.get_status_display }}</p>
         </div>
-        
-        <div class="patient-details">
-            <h3>Patient Information</h3>
+        <div class="col">
+            <h3>Patient</h3>
             <p><strong>Name:</strong> {{ invoice.patient.full_name }}</p>
             <p><strong>Phone:</strong> {{ invoice.patient.phone }}</p>
             <p><strong>Email:</strong> {{ invoice.patient.email|default:"N/A" }}</p>
-            <p><strong>Address:</strong> {{ invoice.patient.address|default:"N/A" }}</p>
         </div>
     </div>
     
-    <h3>Invoice Items</h3>
+    <h3>Items</h3>
     <table>
         <thead>
             <tr>
-                <th style="width: 60%">Description</th>
-                <th style="width: 15%">Quantity</th>
-                <th style="width: 12%">Unit Price</th>
-                <th style="width: 13%">Total</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
             </tr>
         </thead>
         <tbody>
@@ -128,53 +62,24 @@
                 <td>${{ item.total_price|default:"0"|floatformat:2 }}</td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="4" style="text-align:center;">No items</td>
-            </tr>
+            <tr><td colspan="4" style="text-align:center;">No items</td></tr>
             {% endfor %}
         </tbody>
     </table>
     
     <div class="totals">
         <table>
-            <tr>
-                <td>Subtotal:</td>
-                <td>${{ invoice.subtotal|default:"0"|floatformat:2 }}</td>
-            </tr>
-            <tr>
-                <td>Tax:</td>
-                <td>${{ invoice.tax_amount|default:"0"|floatformat:2 }}</td>
-            </tr>
-            <tr>
-                <td>Discount:</td>
-                <td>-${{ invoice.discount_amount|default:"0"|floatformat:2 }}</td>
-            </tr>
-            <tr>
-                <td class="final-total">Total Amount:</td>
-                <td class="final-total">${{ invoice.total_amount|default:"0"|floatformat:2 }}</td>
-            </tr>
-            <tr>
-                <td>Amount Paid:</td>
-                <td>${{ invoice.amount_paid|default:"0"|floatformat:2 }}</td>
-            </tr>
-            <tr>
-                <td><strong>Balance Due:</strong></td>
-                <td><strong>${{ invoice.balance_due|default:"0"|floatformat:2 }}</strong></td>
-            </tr>
+            <tr><td>Subtotal:</td><td>${{ invoice.subtotal|default:"0"|floatformat:2 }}</td></tr>
+            <tr><td>Tax:</td><td>${{ invoice.tax_amount|default:"0"|floatformat:2 }}</td></tr>
+            <tr><td>Discount:</td><td>-${{ invoice.discount_amount|default:"0"|floatformat:2 }}</td></tr>
+            <tr><td class="final-total">Total:</td><td class="final-total">${{ invoice.total_amount|default:"0"|floatformat:2 }}</td></tr>
+            <tr><td>Paid:</td><td>${{ invoice.amount_paid|default:"0"|floatformat:2 }}</td></tr>
+            <tr><td><strong>Balance:</strong></td><td><strong>${{ invoice.balance_due|default:"0"|floatformat:2 }}</strong></td></tr>
         </table>
     </div>
     
-    {% if invoice.notes %}
-    <div style="margin-top: 40px;">
-        <h3>Notes</h3>
-        <p>{{ invoice.notes }}</p>
-    </div>
-    {% endif %}
-    
     <div class="footer">
         <p>Thank you for choosing Dental Clinic!</p>
-        <p>For any questions regarding this invoice, please contact us.</p>
-        <p>Generated on: {% now "F d, Y" %}</p>
     </div>
 </body>
 </html>
