@@ -123,9 +123,13 @@
             {% for item in invoice.items.all %}
             <tr>
                 <td>{{ item.description }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>${{ item.unit_price|floatformat:2 }}</td>
-                <td>${{ item.total_price|floatformat:2 }}</td>
+                <td>{{ item.quantity|default:"1" }}</td>
+                <td>${{ item.unit_price|default:"0"|floatformat:2 }}</td>
+                <td>${{ item.total_price|default:"0"|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center;">No items</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -135,31 +139,27 @@
         <table>
             <tr>
                 <td>Subtotal:</td>
-                <td>${{ invoice.subtotal|floatformat:2 }}</td>
+                <td>${{ invoice.subtotal|default:"0"|floatformat:2 }}</td>
             </tr>
-            {% if invoice.tax_amount and invoice.tax_amount > 0 %}
             <tr>
                 <td>Tax:</td>
-                <td>${{ invoice.tax_amount|floatformat:2 }}</td>
+                <td>${{ invoice.tax_amount|default:"0"|floatformat:2 }}</td>
             </tr>
-            {% endif %}
-            {% if invoice.discount_amount and invoice.discount_amount > 0 %}
             <tr>
                 <td>Discount:</td>
-                <td>-${{ invoice.discount_amount|floatformat:2 }}</td>
+                <td>-${{ invoice.discount_amount|default:"0"|floatformat:2 }}</td>
             </tr>
-            {% endif %}
             <tr>
                 <td class="final-total">Total Amount:</td>
-                <td class="final-total">${{ invoice.total_amount|floatformat:2 }}</td>
+                <td class="final-total">${{ invoice.total_amount|default:"0"|floatformat:2 }}</td>
             </tr>
             <tr>
                 <td>Amount Paid:</td>
-                <td>${{ invoice.amount_paid|floatformat:2 }}</td>
+                <td>${{ invoice.amount_paid|default:"0"|floatformat:2 }}</td>
             </tr>
             <tr>
                 <td><strong>Balance Due:</strong></td>
-                <td><strong>${{ invoice.balance_due|floatformat:2 }}</strong></td>
+                <td><strong>${{ invoice.balance_due|default:"0"|floatformat:2 }}</strong></td>
             </tr>
         </table>
     </div>
