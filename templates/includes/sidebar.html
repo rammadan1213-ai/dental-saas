@@ -224,12 +224,12 @@
         </li>
         
         <li class="nav-item">
-            {% if user.clinic.subscription.can_access_billing %}
+            {% if user.clinic and user.clinic.subscription.can_access_billing %}
             <a class="nav-link {% if 'billing' in request.path or 'invoice' in request.path %}active{% endif %}" href="{% url 'billing:invoice_list' %}">
                 <i class="bi bi-wallet2"></i>
                 Billing
             </a>
-            {% else %}
+            {% elif user.clinic %}
             <a class="nav-link text-muted" href="#" onclick="showUpgradeNotice('billing')">
                 <i class="bi bi-lock"></i>
                 Billing <span class="badge bg-warning ms-2">Pro</span>
@@ -260,12 +260,12 @@
         </li>
         
         <li class="nav-item">
-            {% if user.clinic.subscription.can_access_analytics %}
+            {% if user.clinic and user.clinic.subscription.can_access_analytics %}
             <a class="nav-link {% if 'analytics' in request.path %}active{% endif %}" href="{% url 'dashboard:analytics' %}">
                 <i class="bi bi-graph-up-arrow"></i>
                 Analytics
             </a>
-            {% else %}
+            {% elif user.clinic %}
             <a class="nav-link text-muted" href="#" onclick="showUpgradeNotice('analytics')">
                 <i class="bi bi-lock"></i>
                 Analytics <span class="badge bg-warning ms-2">Enterprise</span>
@@ -274,12 +274,12 @@
         </li>
         
         <li class="nav-item">
-            {% if user.clinic.subscription.can_access_reports %}
+            {% if user.clinic and user.clinic.subscription.can_access_reports %}
             <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="{% url 'dashboard:reports' %}">
                 <i class="bi bi-file-earmark-bar-graph"></i>
                 Reports
             </a>
-            {% else %}
+            {% elif user.clinic %}
             <a class="nav-link text-muted" href="#" onclick="showUpgradeNotice('reports')">
                 <i class="bi bi-lock"></i>
                 Reports <span class="badge bg-warning ms-2">Pro</span>
