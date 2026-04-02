@@ -114,8 +114,7 @@ def quick_create_superadmin(request):
     if User.objects.filter(username=username).exists():
         messages.info(request, "Super admin already exists!")
     else:
-        clinic = Clinic.objects.create(name="Main Dental Clinic", owner=None)
-
+        # Create user first
         admin = User.objects.create_user(
             username=username,
             email="eng.abdulrahem@example.com",
@@ -125,11 +124,13 @@ def quick_create_superadmin(request):
             role="admin",
             is_staff=True,
             is_superuser=True,
-            clinic=clinic,
         )
 
-        clinic.owner = admin
-        clinic.save()
+        # Then create clinic with owner
+        clinic = Clinic.objects.create(name="Main Dental Clinic", owner=admin)
+
+        admin.clinic = clinic
+        admin.save()
 
         Subscription.objects.create(
             clinic=clinic,
