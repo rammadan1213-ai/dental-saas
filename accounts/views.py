@@ -97,6 +97,14 @@ class UserListView(AdminRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        # Super admin sees ALL users from ALL clinics
+        if self.request.user.is_superuser:
+            pass  # Show all users
+        else:
+            # Regular admin only sees users from their clinic
+            queryset = queryset.filter(clinic=self.request.user.clinic)
+
         role = self.request.GET.get("role")
         search = self.request.GET.get("search")
 
@@ -109,7 +117,7 @@ class UserListView(AdminRequiredMixin, ListView):
                 | Q(last_name__icontains=search)
                 | Q(email__icontains=search)
             )
-        return queryset
+        return queryset.select_related("clinic")
 
 
 class UserCreateView(AdminRequiredMixin, CreateView):
@@ -118,7 +126,17 @@ class UserCreateView(AdminRequiredMixin, CreateView):
     template_name = "accounts/user_form.html"
     success_url = reverse_lazy("accounts:user_list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # If not super admin, restrict to own clinic
+        if not self.request.user.is_superuser:
+            kwargs["initial"]["clinic"] = self.request.user.clinic
+        return kwargs
+
     def form_valid(self, form):
+        # If not super admin, assign to their clinic
+        if not self.request.user.is_superuser:
+            form.instance.clinic = self.request.user.clinic
         messages.success(self.request, "User created successfully.")
         return super().form_valid(form)
 
@@ -129,6 +147,13 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     template_name = "accounts/user_form.html"
     success_url = reverse_lazy("accounts:user_list")
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Super admin can edit all users, regular admin only their clinic
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(clinic=self.request.user.clinic)
+        return queryset
+
     def form_valid(self, form):
         messages.success(self.request, "User updated successfully.")
         return super().form_valid(form)
@@ -138,6 +163,12 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
     model = User
     template_name = "accounts/user_confirm_delete.html"
     success_url = reverse_lazy("accounts:user_list")
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(clinic=self.request.user.clinic)
+        return queryset
 
     def form_valid(self, form):
         messages.success(self.request, "User deleted successfully.")
