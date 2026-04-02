@@ -295,6 +295,15 @@ def export_invoice_pdf(request, pk):
     if clinic and invoice.clinic != clinic:
         return HttpResponse("Unauthorized", status=403)
     template_path = "billing/invoice_pdf.html"
+
+    invoice.subtotal = float(invoice.subtotal) if invoice.subtotal else 0
+    invoice.tax_amount = float(invoice.tax_amount) if invoice.tax_amount else 0
+    invoice.discount_amount = (
+        float(invoice.discount_amount) if invoice.discount_amount else 0
+    )
+    invoice.total_amount = float(invoice.total_amount) if invoice.total_amount else 0
+    invoice.amount_paid = float(invoice.amount_paid) if invoice.amount_paid else 0
+
     context = {"invoice": invoice}
 
     template = get_template(template_path)
