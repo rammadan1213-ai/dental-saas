@@ -91,9 +91,14 @@ class Payment(models.Model):
     class PaymentMethod(models.TextChoices):
         CASH = "cash", _("Cash")
         CREDIT_CARD = "credit_card", _("Credit Card")
-        DEBIT_CARD = "debit_card", _("Debit Transfer")
+        DEBIT_CARD = "debit_card", _("Debit Card")
         BANK_TRANSFER = "bank_transfer", _("Bank Transfer")
+        ZAAD = "zaad", _("Zaad (Somali Mobile Money)")
+        EDAHAB = "edahab", _("E-Dahab (Somali Mobile Money)")
+        SAHAL = "sahal", _("Sahal (Somali Mobile Money)")
         INSURANCE = "insurance", _("Insurance")
+        COMPANY = "company", _("Company/Employer")
+        INSTALLMENT = "installment", _("Payment Plan/Installment")
         OTHER = "other", _("Other")
 
     clinic = models.ForeignKey(

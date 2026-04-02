@@ -93,8 +93,24 @@
                 {% for payment in invoice.payments.all %}
                 <tr>
                     <td>{{ payment.payment_date }}</td>
-                    <td>${{ payment.amount|floatformat:2 }}</td>
-                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td><span class="badge bg-success">${{ payment.amount|floatformat:2 }}</span></td>
+                    <td>
+                        {% if payment.payment_method == 'cash' %}
+                        <span class="badge bg-primary"><i class="bi bi-cash me-1"></i>Cash</span>
+                        {% elif payment.payment_method == 'zaad' %}
+                        <span class="badge bg-info"><i class="bi bi-phone me-1"></i>Zaad</span>
+                        {% elif payment.payment_method == 'edahab' %}
+                        <span class="badge bg-warning"><i class="bi bi-phone me-1"></i>E-Dahab</span>
+                        {% elif payment.payment_method == 'sahal' %}
+                        <span class="badge bg-secondary"><i class="bi bi-phone me-1"></i>Sahal</span>
+                        {% elif payment.payment_method == 'credit_card' %}
+                        <span class="badge bg-success"><i class="bi bi-credit-card me-1"></i>Credit Card</span>
+                        {% elif payment.payment_method == 'insurance' %}
+                        <span class="badge bg-danger"><i class="bi bi-shield-check me-1"></i>Insurance</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ payment.get_payment_method_display }}</span>
+                        {% endif %}
+                    </td>
                     <td>{{ payment.reference_number|default:"-" }}</td>
                     <td>{{ payment.recorded_by.username }}</td>
                 </tr>
