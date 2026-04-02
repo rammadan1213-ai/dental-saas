@@ -70,16 +70,22 @@ class LogoutView(View):
 
 class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
+        if not self.request.user.is_authenticated:
+            return False
         return self.request.user.is_admin_user or self.request.user.is_superuser
 
 
 class SuperAdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
+        if not self.request.user.is_authenticated:
+            return False
         return self.request.user.is_superuser
 
 
 class StaffRequiredMixin(UserPassesTestMixin):
     def test_func(self):
+        if not self.request.user.is_authenticated:
+            return False
         return self.request.user.is_staff or self.request.user.is_admin_user
 
 
