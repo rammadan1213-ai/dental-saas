@@ -204,31 +204,34 @@ class RegisterView(View):
         owner_name = request.POST.get("owner_name")
         owner_email = request.POST.get("email")
         owner_password = request.POST.get("password")
+        plan = request.POST.get("plan", "basic")
 
-        if User.objects.filter(username=owner_email.split("@")[0]).exists():
+        username = owner_email.split("@")[0]
+        if User.objects.filter(username=username).exists():
             messages.error(request, "User already exists. Please login.")
             return redirect("accounts:login")
 
-        clinic = Clinic.objects.create(
-            name=clinic_name,
-            owner=None,
-        )
+        from clinics.models import Subscription
 
         user = User.objects.create_user(
-            username=owner_email.split("@")[0],
+            username=username,
             email=owner_email,
             password=owner_password,
             first_name=owner_name,
             role="admin",
-            clinic=clinic,
         )
 
-        clinic.owner = user
-        clinic.save()
+        clinic = Clinic.objects.create(
+            name=clinic_name,
+            owner=user,
+        )
+
+        user.clinic = clinic
+        user.save()
 
         Subscription.objects.create(
             clinic=clinic,
-            plan="basic",
+            plan=plan,
             is_active=True,
             expiry_date=datetime.now().date() + timedelta(days=30),
         )
