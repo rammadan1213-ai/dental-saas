@@ -2,6 +2,7 @@
 .sidebar {
     width: 280px;
     min-height: 100vh;
+    max-height: 100vh;
     background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
     padding: 0;
     position: fixed;
@@ -9,20 +10,32 @@
     top: 0;
     z-index: 1000;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-content {
+    flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 10px;
 }
 
-.sidebar::-webkit-scrollbar {
-    width: 5px;
+.sidebar-content::-webkit-scrollbar {
+    width: 6px;
 }
 
-.sidebar::-webkit-scrollbar-track {
+.sidebar-content::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.sidebar-content::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-header {
@@ -193,6 +206,7 @@
         </h4>
     </div>
     
+    <div class="sidebar-content">
     <div class="sidebar-section">Main Menu</div>
     <ul class="nav flex-column">
         <li class="nav-item">
@@ -225,17 +239,10 @@
         </li>
         
         <li class="nav-item">
-            {% if user.clinic and user.clinic.subscription.can_access_billing %}
             <a class="nav-link {% if 'billing' in request.path or 'invoice' in request.path %}active{% endif %}" href="{% url 'billing:invoice_list' %}">
                 <i class="bi bi-wallet2"></i>
                 Billing
             </a>
-            {% elif user.clinic %}
-            <a class="nav-link text-muted" href="#" onclick="showUpgradeNotice('billing')">
-                <i class="bi bi-lock"></i>
-                Billing <span class="badge bg-warning ms-2">Pro</span>
-            </a>
-            {% endif %}
         </li>
         {% endif %}
     </ul>
@@ -263,31 +270,17 @@
         </li>
         
         <li class="nav-item">
-            {% if user.clinic and user.clinic.subscription.can_access_analytics %}
             <a class="nav-link {% if 'analytics' in request.path %}active{% endif %}" href="{% url 'dashboard:analytics' %}">
                 <i class="bi bi-graph-up-arrow"></i>
                 Analytics
             </a>
-            {% elif user.clinic %}
-            <a class="nav-link text-muted" href="#" onclick="showUpgradeNotice('analytics')">
-                <i class="bi bi-lock"></i>
-                Analytics <span class="badge bg-warning ms-2">Enterprise</span>
-            </a>
-            {% endif %}
         </li>
         
         <li class="nav-item">
-            {% if user.clinic and user.clinic.subscription.can_access_reports %}
             <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="{% url 'dashboard:reports' %}">
                 <i class="bi bi-file-earmark-bar-graph"></i>
                 Reports
             </a>
-            {% elif user.clinic %}
-            <a class="nav-link text-muted" href="#" onclick="showUpgradeNotice('reports')">
-                <i class="bi bi-lock"></i>
-                Reports <span class="badge bg-warning ms-2">Pro</span>
-            </a>
-            {% endif %}
         </li>
         {% endif %}
     </ul>
@@ -298,36 +291,41 @@
     <ul class="nav flex-column">
         {% if user.is_admin_user or user.is_superuser %}
         <li class="nav-item">
-            <a class="nav-link {% if 'user' in request.path %}active{% endif %}" href="{% url 'accounts:user_list' %}">
+            <a class="nav-link {% if 'user' in request.path and 'profile' not in request.path %}active{% endif %}" href="{% url 'accounts:user_list' %}">
                 <i class="bi bi-person-badge"></i>
                 Users
             </a>
         </li>
         {% endif %}
         
-        {% if user.is_admin_user or user.is_superuser %}
+        {% if user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'audit' in request.path %}active{% endif %}" href="{% url 'accounts:audit_log_list' %}">
                 <i class="bi bi-shield-check"></i>
                 Audit Logs
             </a>
         </li>
-        {% endif %}
         
-        {% if user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link saaS-link {% if 'superadmin' in request.path or 'admin/dashboard' in request.path %}active{% endif %}" href="{% url 'accounts:superadmin_dashboard' %}">
                 <i class="bi bi-gem"></i>
                 Super Admin
             </a>
         </li>
-        {% endif %}
         
-        {% if user.is_admin_user or user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'subscription' in request.path or 'pricing' in request.path %}active{% endif %}" href="{% url 'clinics:subscription_manage' %}">
                 <i class="bi bi-credit-card"></i>
                 Subscription
+            </a>
+        </li>
+        {% endif %}
+        
+        {% if not user.is_superuser %}
+        <li class="nav-item">
+            <a class="nav-link {% if 'clinic/settings' in request.path %}active{% endif %}" href="{% url 'accounts:clinic_settings' %}">
+                <i class="bi bi-gear"></i>
+                Clinic Settings
             </a>
         </li>
         {% endif %}
@@ -351,6 +349,7 @@
             </a>
         </li>
     </ul>
+    </div>
     
     <div class="sidebar-footer">
         <div class="user-card">
