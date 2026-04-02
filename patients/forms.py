@@ -28,7 +28,7 @@ class PatientForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "address": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "date_of_birth": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
+                attrs={"class": "form-control", "type": "date", "max": "2099-12-31"}
             ),
             "gender": forms.Select(attrs={"class": "form-control"}),
             "blood_type": forms.TextInput(attrs={"class": "form-control"}),
