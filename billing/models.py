@@ -132,7 +132,7 @@ class Invoice(models.Model):
         return f"{prefix}-{new_num:04d}"
 
     def update_total(self):
-        total = sum(item.price for item in self.items.all())
+        total = sum(item.total_price for item in self.items.all())
         self.total_amount = total
         self.save()
 
