@@ -167,7 +167,11 @@
                                     </a>
                                 </td>
                                 <td>{{ payment.invoice.patient.full_name }}</td>
-                                <td>{{ payment.invoice.treatment.procedure|default:"General"|default:payment.invoice.treatment }}</td>
+                                <td>
+                                    {% with first_item=payment.invoice.items.first %}
+                                        {{ first_item.description|default:"General Services" }}
+                                    {% endwith %}
+                                </td>
                                 <td class="text-end">${{ payment.invoice.total_amount|floatformat:2 }}</td>
                                 <td class="text-end text-success">${{ payment.invoice.amount_paid|floatformat:2 }}</td>
                                 <td class="text-end {% if payment.invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
