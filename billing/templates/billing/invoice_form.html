@@ -50,12 +50,12 @@
                             {{ form.patient|as_crispy_field }}
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Dental Service</label>
-                            <select id="dentalServiceSelect" class="form-select" onchange="loadDentalService()">
-                                <option value="">Select a service</option>
-                                {% for service in dental_services %}
-                                <option value="{{ service.id }}" data-price="{{ service.default_price }}" data-name="{{ service.name }}">
-                                    {{ service.name }} - ${{ service.default_price }}
+                            <label class="form-label">Treatment</label>
+                            <select id="treatmentSelect" class="form-select" onchange="loadTreatment()">
+                                <option value="">Select treatment</option>
+                                {% for treatment in treatments %}
+                                <option value="{{ treatment.id }}" data-price="{{ treatment.cost }}" data-service="{{ treatment.dental_service.name|default:treatment.procedure }}" data-patient="{{ treatment.patient.id }}">
+                                    {{ treatment.patient.full_name }} - {{ treatment.procedure|truncatechars:30 }}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -291,6 +291,40 @@ function loadDentalService() {
             const totalCell = firstRow.querySelector('.total-cell');
             
             if (descInput) descInput.value = name;
+            if (priceInput) {
+                priceInput.value = price;
+                priceInput.dispatchEvent(new Event('change'));
+            }
+            if (totalCell) totalCell.textContent = '$' + price.toFixed(2);
+        }
+        
+        calculateTotals();
+    }
+}
+
+function loadTreatment() {
+    const select = document.getElementById('treatmentSelect');
+    const option = select.options[select.selectedIndex];
+    
+    if (option && option.value) {
+        const price = parseFloat(option.dataset.price) || 0;
+        const serviceName = option.dataset.service || '';
+        const patientId = option.dataset.patient || '';
+        
+        const patientSelect = document.getElementById('id_patient');
+        if (patientSelect && patientId) {
+            patientSelect.value = patientId;
+        }
+        
+        const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+        const firstRow = table.querySelector('.item-row');
+        
+        if (firstRow) {
+            const descInput = firstRow.querySelector('[id$="-description"]');
+            const priceInput = firstRow.querySelector('[id$="-unit_price"]');
+            const totalCell = firstRow.querySelector('.total-cell');
+            
+            if (descInput) descInput.value = serviceName;
             if (priceInput) {
                 priceInput.value = price;
                 priceInput.dispatchEvent(new Event('change'));
