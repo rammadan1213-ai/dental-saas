@@ -11,7 +11,7 @@ class PatientForm(forms.ModelForm):
             "email",
             "phone",
             "address",
-            "date_of_birth",
+            "age",
             "gender",
             "blood_type",
             "allergies",
@@ -27,8 +27,8 @@ class PatientForm(forms.ModelForm):
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "address": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "date_of_birth": forms.DateInput(
-                attrs={"class": "form-control", "type": "date", "max": "2099-12-31"}
+            "age": forms.NumberInput(
+                attrs={"class": "form-control", "min": "0", "max": "150"}
             ),
             "gender": forms.Select(attrs={"class": "form-control"}),
             "blood_type": forms.TextInput(attrs={"class": "form-control"}),

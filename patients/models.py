@@ -21,7 +21,10 @@ class Patient(models.Model):
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20)
     address = models.TextField(blank=True)
-    date_of_birth = models.DateField()
+    age = models.PositiveIntegerField(
+        null=True, blank=True, help_text=_("Age in years")
+    )
+    date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
     blood_type = models.CharField(max_length=5, blank=True)
     allergies = models.TextField(blank=True, help_text=_("List any known allergies"))
@@ -49,7 +52,11 @@ class Patient(models.Model):
         return f"{self.first_name} {self.last_name}"
 
     @property
-    def age(self):
+    def calculate_age(self):
+        if self.age:
+            return self.age
+        if not self.date_of_birth:
+            return None
         from datetime import date
 
         today = date.today()

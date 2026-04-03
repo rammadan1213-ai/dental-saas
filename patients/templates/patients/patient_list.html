@@ -82,7 +82,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <div>{{ patient.age }} years</div>
+                            <div>{{ patient.calculate_age|default:patient.age }} years</div>
                             <div><small class="text-muted">{{ patient.get_gender_display }}</small></div>
                         </td>
                         <td>

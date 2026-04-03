@@ -27,7 +27,7 @@
                 <p><strong>Email:</strong> {{ patient.email }}</p>
                 <p><strong>Phone:</strong> {{ patient.phone }}</p>
                 <p><strong>Address:</strong> {{ patient.address }}</p>
-                <p><strong>Date of Birth:</strong> {{ patient.date_of_birth }} ({{ patient.age }} years)</p>
+                <p><strong>Age:</strong> {{ patient.calculate_age|default:patient.age }} years</p>
                 <p><strong>Gender:</strong> {{ patient.get_gender_display }}</p>
                 <p><strong>Blood Type:</strong> {{ patient.blood_type }}</p>
             </div>
