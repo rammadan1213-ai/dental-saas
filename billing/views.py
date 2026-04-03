@@ -18,6 +18,7 @@ from xhtml2pdf import pisa
 from io import BytesIO
 import stripe
 import json
+from django.utils import timezone
 from .models import Invoice, InvoiceItem, Payment
 from .forms import InvoiceForm, InvoiceItemFormSet, PaymentForm, InvoiceFilterForm
 from utils.permissions import has_feature, get_plan_features
@@ -214,6 +215,18 @@ class InvoiceCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
 
             items_formset.instance = self.object
             items_formset.save()
+
+            initial_payment = form.cleaned_data.get("initial_payment")
+            payment_method = form.cleaned_data.get("payment_method")
+            if initial_payment and initial_payment > 0 and payment_method:
+                Payment.objects.create(
+                    invoice=self.object,
+                    amount=initial_payment,
+                    payment_date=timezone.now().date(),
+                    payment_method=payment_method,
+                    recorded_by=self.request.user,
+                    clinic=clinic,
+                )
 
             messages.success(self.request, "Invoice created successfully.")
             return response

@@ -4,6 +4,19 @@ from .models import Invoice, InvoiceItem, Payment
 
 
 class InvoiceForm(forms.ModelForm):
+    initial_payment = forms.DecimalField(
+        required=False,
+        initial=0,
+        widget=forms.NumberInput(
+            attrs={"class": "form-control", "min": "0", "step": "0.01"}
+        ),
+    )
+    payment_method = forms.ChoiceField(
+        required=False,
+        choices=[("", "Select method")] + list(Payment.PaymentMethod.choices),
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = Invoice
         fields = [
