@@ -352,7 +352,7 @@ class PaymentListView(
         if clinic:
             invoices = invoices.filter(clinic=clinic)
 
-        context["invoices_for_form"] = invoices.select_related("patient", "treatment")
+        context["invoices_for_form"] = invoices.select_related("patient", "clinic")
 
         total_paid = sum(inv.amount_paid for inv in invoices)
         total_pending = sum(inv.balance_due for inv in invoices)
