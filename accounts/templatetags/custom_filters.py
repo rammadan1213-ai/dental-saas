@@ -9,3 +9,27 @@ def mul(value, arg):
         return int(value) * int(arg)
     except (ValueError, TypeError):
         return 0
+
+
+@register.filter
+def div(value, arg):
+    try:
+        return int(value) / int(arg) if int(arg) != 0 else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+@register.filter
+def mult(value, arg):
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+
+@register.filter
+def sub(value, arg):
+    try:
+        return float(value) - float(arg)
+    except (ValueError, TypeError):
+        return 0
