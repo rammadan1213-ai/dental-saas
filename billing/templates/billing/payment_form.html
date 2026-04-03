@@ -3,32 +3,125 @@
 {% block title %}Record Payment{% endblock %}
 {% block page_title %}Record Payment{% endblock %}
 
+{% block extra_css %}
+<style>
+    .payment-option {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .payment-option:hover {
+        transform: translateY(-2px);
+    }
+    .payment-option.selected {
+        border-color: #0d6efd !important;
+        background: #f0f7ff;
+    }
+    .quick-pay-btn {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">Record Payment for Invoice {{ invoice.invoice_number }}</h5>
-    </div>
-    <div class="card-body">
-        <div class="alert alert-info">
-            <strong>Invoice Total:</strong> ${{ invoice.total_amount|floatformat:2 }} | 
-            <strong>Amount Paid:</strong> ${{ invoice.amount_paid|floatformat:2 }} | 
-            <strong>Balance Due:</strong> ${{ invoice.balance_due|floatformat:2 }}
-        </div>
-        
-        <form method="post">
-            {% csrf_token %}
-            
-            {{ form|crispy }}
-            
-            <div class="mt-4">
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Record Payment
-                </button>
-                <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Cancel
-                </a>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Record Payment for Invoice {{ invoice.invoice_number }}</h5>
             </div>
-        </form>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="text-muted small">Invoice Total</div>
+                            <h4 class="mb-0 text-primary">${{ invoice.total_amount|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Amount Paid</div>
+                            <h4 class="mb-0 text-success">${{ invoice.amount_paid|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Balance Due</div>
+                            <h4 class="mb-0 text-danger">${{ invoice.balance_due|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Quick Pay</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-success quick-pay-btn" onclick="setAmount('{{ invoice.balance_due }}')">
+                                Pay Full (${{ invoice.balance_due|floatformat:2 }})
+                            </button>
+                            <button type="button" class="btn btn-outline-primary quick-pay-btn" onclick="setAmount('{{ invoice.balance_due|div:2|floatformat:2 }}')">
+                                Pay Half
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {{ form|crispy }}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Record Payment
+                        </button>
+                        <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Payment Methods</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-cash text-success me-2"></i> Cash
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-phone text-info me-2"></i> Zaad (Somali Mobile Money)
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-phone text-warning me-2"></i> E-Dahab (Somali Mobile Money)
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-phone text-secondary me-2"></i> Sahal (Somali Mobile Money)
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-credit-card text-primary me-2"></i> Credit/Debit Card
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-bank text-dark me-2"></i> Bank Transfer
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-shield-check text-danger me-2"></i> Insurance
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-building text-purple me-2"></i> Company/Employer
+                    </div>
+                    <div class="list-group-item border-0">
+                        <i class="bi bi-calendar-check text-info me-2"></i> Payment Plan/Installment
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setAmount(amount) {
+    document.getElementById('id_amount').value = amount;
+}
+</script>
 {% endblock %}
