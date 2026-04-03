@@ -203,6 +203,102 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "accounts/password_reset_complete.html"
 
 
+class CustomPasswordResetViewNoEmail(View):
+    template_name = "accounts/password_reset.html"
+
+    def get(self, request):
+        form = PasswordResetForm()
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        from django.contrib.auth import get_user_model
+        from .models import PasswordReset
+        from django.utils import timezone
+        import secrets
+
+        email = request.POST.get("email")
+        User = get_user_model()
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.success(
+                request, "If that email exists, a reset link has been sent."
+            )
+            return redirect("accounts:password_reset_done")
+
+        token = secrets.token_urlsafe(32)
+        expires = timezone.now() + timedelta(hours=24)
+
+        PasswordReset.objects.create(user=user, token=token, expires_at=expires)
+
+        reset_link = request.build_absolute_uri(
+            f"/accounts/password-reset-confirm/{token}/"
+        )
+        messages.success(request, f"Reset link: {reset_link}")
+        messages.success(request, "If that email exists, a reset link has been sent.")
+        return redirect("accounts:password_reset_done")
+
+
+class CustomPasswordResetConfirmViewNoEmail(View):
+    template_name = "accounts/password_reset_confirm.html"
+
+    def get(self, request, token):
+        from .models import PasswordReset
+
+        try:
+            reset = PasswordReset.objects.get(token=token)
+            if not reset.is_valid():
+                messages.error(request, "Reset link expired or already used.")
+                return redirect("accounts:password_reset")
+        except PasswordReset.DoesNotExist:
+            messages.error(request, "Invalid reset link.")
+            return redirect("accounts:password_reset")
+
+        return render(request, self.template_name, {"token": token})
+
+    def post(self, request, token):
+        from .models import PasswordReset
+        from django.contrib.auth import get_user_model
+
+        password1 = request.POST.get("password1")
+        password2 = request.POST.get("password2")
+
+        if password1 != password2:
+            messages.error(request, "Passwords don't match.")
+            return render(request, self.template_name, {"token": token})
+
+        if len(password1) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+            return render(request, self.template_name, {"token": token})
+
+        try:
+            reset = PasswordReset.objects.get(token=token)
+            if not reset.is_valid():
+                messages.error(request, "Reset link expired or already used.")
+                return redirect("accounts:password_reset")
+
+            user = reset.user
+            user.set_password(password1)
+            user.save()
+            reset.used = True
+            reset.save()
+
+            messages.success(request, "Password reset successful! Please login.")
+            return redirect("accounts:password_reset_complete")
+        except PasswordReset.DoesNotExist:
+            messages.error(request, "Invalid reset link.")
+            return redirect("accounts:password_reset")
+
+
+class CustomPasswordResetDoneViewNoEmail(TemplateView):
+    template_name = "accounts/password_reset_done.html"
+
+
+class CustomPasswordResetCompleteViewNoEmail(TemplateView):
+    template_name = "accounts/password_reset_complete.html"
+
+
 class AuditLogListView(SuperAdminRequiredMixin, ListView):
     model = AuditLog
     template_name = "accounts/audit_log_list.html"

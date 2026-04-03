@@ -22,22 +22,22 @@ urlpatterns = [
     ),
     path(
         "password-reset/",
-        views.CustomPasswordResetView.as_view(),
+        views.CustomPasswordResetViewNoEmail.as_view(),
         name="password_reset",
     ),
     path(
         "password-reset/done/",
-        views.CustomPasswordResetDoneView.as_view(),
+        views.CustomPasswordResetDoneViewNoEmail.as_view(),
         name="password_reset_done",
     ),
     path(
-        "reset/<uidb64>/<token>/",
-        views.CustomPasswordResetConfirmView.as_view(),
+        "password-reset-confirm/<str:token>/",
+        views.CustomPasswordResetConfirmViewNoEmail.as_view(),
         name="password_reset_confirm",
     ),
     path(
         "reset/done/",
-        views.CustomPasswordResetCompleteView.as_view(),
+        views.CustomPasswordResetCompleteViewNoEmail.as_view(),
         name="password_reset_complete",
     ),
     path("audit-logs/", views.AuditLogListView.as_view(), name="audit_log_list"),
