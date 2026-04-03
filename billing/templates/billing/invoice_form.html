@@ -3,78 +3,247 @@
 {% block title %}{% if object %}Edit Invoice{% else %}New Invoice{% endif %}{% endblock %}
 {% block page_title %}{% if object %}Edit Invoice{% else %}Create Invoice{% endif %}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .item-row { transition: background 0.2s; }
+    .item-row:hover { background: #f8f9fa; }
+    .total-cell { font-weight: bold; }
+    .calculation-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    .calculation-box .calc-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .calculation-box .calc-row:last-child {
+        border-bottom: none;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+    .calculation-box .calc-row.paid {
+        background: rgba(40, 167, 69, 0.3);
+        margin: 0.5rem -1.5rem -1.5rem;
+        padding: 1rem 1.5rem;
+        border-radius: 0 0 10px 10px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">{% if object %}Edit Invoice{% else %}Create New Invoice{% endif %}</h5>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{% if object %}Edit Invoice #{{ object.invoice_number }}{% else %}Create New Invoice{% endif %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="invoiceForm">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.patient|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.issue_date|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.due_date|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Invoice Items</h6>
+                        <button type="button" class="btn btn-sm btn-success" onclick="addItem()">
+                            <i class="bi bi-plus-circle me-1"></i>Add Item
+                        </button>
+                    </div>
+                    
+                    {{ items_formset.management_form }}
+                    <table class="table" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%">Description</th>
+                                <th style="width: 15%">Quantity</th>
+                                <th style="width: 20%">Unit Price</th>
+                                <th style="width: 20%">Total</th>
+                                <th style="width: 5%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item_form in items_formset %}
+                            <tr class="item-row">
+                                <td>
+                                    {{ item_form.description }}
+                                    {% if item_form.description.errors %}
+                                    <div class="text-danger small">{{ item_form.description.errors }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ item_form.quantity }}
+                                </td>
+                                <td>
+                                    {{ item_form.unit_price }}
+                                </td>
+                                <td class="total-cell">$0.00</td>
+                                <td>
+                                    {{ item_form.DELETE }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            {{ form.tax_amount|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.discount_amount|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.status|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    {{ form.notes|as_crispy_field }}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>{% if object %}Update Invoice{% else %}Create Invoice{% endif %}
+                        </button>
+                        <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="row">
-                <div class="col-md-6">
-                    {{ form.patient|as_crispy_field }}
-                </div>
-                <div class="col-md-3">
-                    {{ form.issue_date|as_crispy_field }}
-                </div>
-                <div class="col-md-3">
-                    {{ form.due_date|as_crispy_field }}
-                </div>
+    
+    <div class="col-md-4">
+        <div class="calculation-box mb-4">
+            <h5 class="mb-3"><i class="bi bi-calculator me-2"></i>Summary</h5>
+            <div class="calc-row">
+                <span>Subtotal:</span>
+                <span id="calcSubtotal">$0.00</span>
             </div>
-            
-            <hr>
-            <h6>Invoice Items</h6>
-            {{ items_formset.management_form }}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Total</th>
-                        <th>Delete</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item_form in items_formset %}
-                    <tr class="item-row">
-                        <td>{{ item_form.description }}</td>
-                        <td>{{ item_form.quantity }}</td>
-                        <td>{{ item_form.unit_price }}</td>
-                        <td class="total-cell">$0.00</td>
-                        <td>{{ item_form.DELETE }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <hr>
-            
-            <div class="row">
-                <div class="col-md-4">
-                    {{ form.tax_amount|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.discount_amount|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.status|as_crispy_field }}
-                </div>
+            <div class="calc-row">
+                <span>Tax:</span>
+                <span id="calcTax">$0.00</span>
             </div>
-            
-            {{ form.notes|as_crispy_field }}
-            
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Save Invoice
-                </button>
-                <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Cancel
-                </a>
+            <div class="calc-row">
+                <span>Discount:</span>
+                <span id="calcDiscount">-$0.00</span>
             </div>
-        </form>
+            <div class="calc-row">
+                <span>Total:</span>
+                <span id="calcTotal">$0.00</span>
+            </div>
+            {% if object %}
+            <div class="calc-row paid">
+                <span>Paid:</span>
+                <span id="calcPaid">${{ object.amount_paid|floatformat:2 }}</span>
+            </div>
+            <div class="calc-row" style="color: #ffc107;">
+                <span>Balance:</span>
+                <span id="calcBalance">${{ object.balance_due|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Quick Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Add multiple items</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Tax is auto-calculated</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Discount reduces total</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Balance updates on payment</li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    calculateTotals();
+    
+    document.querySelectorAll('[id$="-quantity"], [id$="-unit_price"], [id$="tax_amount"], [id$="discount_amount"]').forEach(function(input) {
+        input.addEventListener('input', calculateTotals);
+        input.addEventListener('change', calculateTotals);
+    });
+    
+    function calculateTotals() {
+        let subtotal = 0;
+        
+        document.querySelectorAll('.item-row').forEach(function(row) {
+            const qtyInput = row.querySelector('[id$="-quantity"]');
+            const priceInput = row.querySelector('[id$="-unit_price"]');
+            const totalCell = row.querySelector('.total-cell');
+            
+            if (qtyInput && priceInput && totalCell) {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = qty * price;
+                subtotal += total;
+                totalCell.textContent = '$' + total.toFixed(2);
+            }
+        });
+        
+        const taxInput = document.getElementById('id_tax_amount');
+        const discountInput = document.getElementById('id_discount_amount');
+        
+        const tax = parseFloat(taxInput ? taxInput.value : 0) || 0;
+        const discount = parseFloat(discountInput ? discountInput.value : 0) || 0;
+        
+        const total = subtotal + tax - discount;
+        
+        document.getElementById('calcSubtotal').textContent = '$' + subtotal.toFixed(2);
+        document.getElementById('calcTax').textContent = '$' + tax.toFixed(2);
+        document.getElementById('calcDiscount').textContent = '-$' + discount.toFixed(2);
+        document.getElementById('calcTotal').textContent = '$' + total.toFixed(2);
+    }
+    
+    window.calculateTotals = calculateTotals;
+});
+
+function addItem() {
+    const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+    const formCount = parseInt(document.getElementById('id_items-TOTAL_FORMS').value);
+    const newRow = table.insertRow();
+    
+    newRow.innerHTML = `
+        <td>
+            <input type="text" name="items-${formCount}-description" class="form-control" placeholder="Service description">
+        </td>
+        <td>
+            <input type="number" name="items-${formCount}-quantity" class="form-control" value="1" min="1" onchange="calculateTotals()">
+        </td>
+        <td>
+            <input type="number" name="items-${formCount}-unit_price" class="form-control" value="0" min="0" step="0.01" onchange="calculateTotals()">
+        </td>
+        <td class="total-cell">$0.00</td>
+        <td>
+            <input type="checkbox" name="items-${formCount}-DELETE">
+        </td>
+    `;
+    
+    document.getElementById('id_items-TOTAL_FORMS').value = formCount + 1;
+    calculateTotals();
+}
+</script>
 {% endblock %}
