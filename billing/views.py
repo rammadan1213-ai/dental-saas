@@ -19,7 +19,7 @@ from io import BytesIO
 import stripe
 import json
 from django.utils import timezone
-from .models import Invoice, InvoiceItem, Payment, Subscription
+from .models import Invoice, InvoiceItem, Payment
 from .forms import InvoiceForm, InvoiceItemFormSet, PaymentForm, InvoiceFilterForm
 from treatments.models import Treatment
 from utils.permissions import has_feature, get_plan_features
@@ -442,7 +442,7 @@ def create_checkout_session(request):
         return JsonResponse({"error": "No clinic found"}, status=400)
 
     try:
-        subscription = Subscription.objects.get(clinic=clinic)
+        subscription = ClinicSubscription.objects.get(clinic=clinic)
         plan_prices = {
             "starter": 1000,
             "pro": 2500,
@@ -510,8 +510,8 @@ def stripe_webhook(request):
         if clinic_id:
             try:
                 clinic = Clinic.objects.get(id=clinic_id)
-                sub, created = Subscription.objects.get_or_create(clinic=clinic)
-                sub.status = Subscription.Status.ACTIVE
+                sub, created = ClinicSubscription.objects.get_or_create(clinic=clinic)
+                sub.is_active = True
                 sub.plan = plan
                 sub.stripe_subscription_id = session.get("subscription") or session.get(
                     "id"
@@ -526,8 +526,10 @@ def stripe_webhook(request):
 
         if subscription_id:
             try:
-                sub = Subscription.objects.get(stripe_subscription_id=subscription_id)
-                sub.status = Subscription.Status.INACTIVE
+                sub = ClinicSubscription.objects.get(
+                    stripe_subscription_id=subscription_id
+                )
+                sub.is_active = False
                 sub.save()
             except Exception:
                 pass
@@ -536,8 +538,10 @@ def stripe_webhook(request):
         subscription = event["data"]["object"]
 
         try:
-            sub = Subscription.objects.get(stripe_subscription_id=subscription["id"])
-            sub.status = Subscription.Status.CANCELED
+            sub = ClinicSubscription.objects.get(
+                stripe_subscription_id=subscription["id"]
+            )
+            sub.is_active = False
             sub.save()
         except Exception:
             pass
