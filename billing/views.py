@@ -472,8 +472,8 @@ def create_checkout_session(request):
             }
         ],
         mode="payment",
-        success_url=request.build_absolute_uri("/dashboard/") + "?payment=success",
-        cancel_url=request.build_absolute_uri("/dashboard/") + "?payment=cancel",
+        success_url=request.build_absolute_uri("/payment-success/"),
+        cancel_url=request.build_absolute_uri("/payment-cancel/"),
         metadata={
             "clinic_id": clinic.id,
             "plan": subscription.plan,
