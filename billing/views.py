@@ -553,7 +553,7 @@ def subscription_view(request):
     if not clinic:
         return redirect("dashboard:home")
 
-    subscription, created = Subscription.objects.get_or_create(clinic=clinic)
+    subscription, created = ClinicSubscription.objects.get_or_create(clinic=clinic)
 
     plan_info = {
         "starter": {
@@ -577,7 +577,7 @@ def subscription_view(request):
         request,
         "billing/subscription.html",
         {
-            "subscription": subscription,
+            "clinic_subscription": subscription,
             "plan_info": plan_info,
         },
     )
@@ -591,7 +591,7 @@ def cancel_subscription(request):
     if clinic:
         try:
             sub = ClinicSubscription.objects.get(clinic=clinic)
-            sub.status = ClinicSubscription.Status.CANCELED
+            sub.is_active = False
             sub.save()
             messages.success(request, "Subscription canceled successfully.")
         except ClinicSubscription.DoesNotExist:
