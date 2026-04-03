@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}Billing & Payments - Dental Clinic{% endblock %}
+{% block page_title %}Billing & Payments{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .stat-card.success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+    .stat-card.primary { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
+    .stat-card.warning { background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; }
+    .stat-label { font-size: 0.9rem; opacity: 0.9; }
+    .stat-count { font-size: 0.85rem; opacity: 0.8; }
+    
+    .status-paid { background-color: #28a745 !important; }
+    .status-partial { background-color: #ffc107 !important; color: #333 !important; }
+    .status-sent, .status-overdue { background-color: #dc3545 !important; }
+    .status-draft { background-color: #6c757d !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="row mb-4 g-3">
+    <div class="col-md-4">
+        <div class="stat-card success">
+            <div class="stat-value">${{ total_paid|floatformat:2 }}</div>
+            <div class="stat-label">Total Paid</div>
+            <div class="stat-count">{{ paid_count }} transactions</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card warning">
+            <div class="stat-value">${{ total_pending|floatformat:2 }}</div>
+            <div class="stat-label">Total Pending</div>
+            <div class="stat-count">{{ pending_count }} transactions</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card primary">
+            <div class="stat-value">${{ total_revenue|floatformat:2 }}</div>
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-count">{{ total_count }} transactions</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Payment Form -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Record Payment</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="paymentForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Patient *</label>
+                        <select name="invoice" class="form-select" required>
+                            <option value="">Select Patient</option>
+                            {% for invoice in invoices_for_form %}
+                            <option value="{{ invoice.id }}">{{ invoice.patient.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Treatment</label>
+                        <input type="text" class="form-control" placeholder="Treatment name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total Amount ($) *</label>
+                        <input type="number" class="form-control" placeholder="0.00" readonly id="totalAmount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Paid Amount ($) *</label>
+                        <input type="number" class="form-control" placeholder="0.00" readonly id="paidAmount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Remaining Amount ($)</label>
+                        <input type="number" class="form-control" placeholder="0.00" readonly id="remainingAmount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount *</label>
+                        <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method *</label>
+                        <select name="payment_method" class="form-select" required>
+                            <option value="">Select Method</option>
+                            <option value="cash">Cash</option>
+                            <option value="credit_card">Credit Card</option>
+                            <option value="debit_card">Debit Card</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="zaad">Zaad</option>
+                            <option value="edahab">E-Dahab</option>
+                            <option value="sahal">Sahal</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="company">Company</option>
+                            <option value="installment">Installment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Status</label>
+                        <select name="status" class="form-select">
+                            <option value="sent">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="partial">Partial</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="payment_date" class="form-control" value="{{ today }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Transactions Table -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Payment Transactions</h5>
+                <a href="{% url 'billing:invoice_create' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>New Invoice
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Invoice #</th>
+                                <th>Patient</th>
+                                <th>Treatment</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">Paid</th>
+                                <th class="text-end">Remaining</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.payment_date }}</td>
+                                <td>
+                                    <a href="{% url 'billing:invoice_detail' payment.invoice.pk %}">
+                                        {{ payment.invoice.invoice_number }}
+                                    </a>
+                                </td>
+                                <td>{{ payment.invoice.patient.full_name }}</td>
+                                <td>{{ payment.invoice.treatment.procedure|default:"General"|default:payment.invoice.treatment }}</td>
+                                <td class="text-end">${{ payment.invoice.total_amount|floatformat:2 }}</td>
+                                <td class="text-end text-success">${{ payment.invoice.amount_paid|floatformat:2 }}</td>
+                                <td class="text-end {% if payment.invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    ${{ payment.invoice.balance_due|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {% if payment.payment_method == 'cash' %}
+                                    <span class="badge bg-primary">Cash</span>
+                                    {% elif payment.payment_method == 'zaad' %}
+                                    <span class="badge bg-info">Zaad</span>
+                                    {% elif payment.payment_method == 'edahab' %}
+                                    <span class="badge bg-warning">E-Dahab</span>
+                                    {% elif payment.payment_method == 'sahal' %}
+                                    <span class="badge bg-secondary">Sahal</span>
+                                    {% elif payment.payment_method == 'credit_card' %}
+                                    <span class="badge bg-success">Credit Card</span>
+                                    {% elif payment.payment_method == 'insurance' %}
+                                    <span class="badge bg-danger">Insurance</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ payment.get_payment_method_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge status-{{ payment.invoice.status }}">{{ payment.invoice.get_status_display }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'billing:invoice_detail' payment.invoice.pk %}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center py-5">
+                                    <i class="bi bi-inbox fs-1 d-block text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">No payment transactions yet</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const invoiceSelect = document.querySelector('select[name="invoice"]');
+    const totalInput = document.getElementById('totalAmount');
+    const paidInput = document.getElementById('paidAmount');
+    const remainingInput = document.getElementById('remainingAmount');
+    
+    const invoiceData = {
+        {% for invoice in invoices_for_form %}
+        "{{ invoice.id }}": {
+            total: "{{ invoice.total_amount }}",
+            paid: "{{ invoice.amount_paid }}",
+            remaining: "{{ invoice.balance_due }}"
+        },
+        {% endfor %}
+    };
+    
+    if (invoiceSelect) {
+        invoiceSelect.addEventListener('change', function() {
+            const data = invoiceData[this.value];
+            if (data) {
+                totalInput.value = data.total;
+                paidInput.value = data.paid;
+                remainingInput.value = data.remaining;
+            } else {
+                totalInput.value = '';
+                paidInput.value = '';
+                remainingInput.value = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -13,17 +13,6 @@ urlpatterns = [
     path(
         "<int:pk>/delete/", views.TreatmentDeleteView.as_view(), name="treatment_delete"
     ),
-    path("templates/", views.TreatmentTemplateListView.as_view(), name="template_list"),
-    path(
-        "templates/create/",
-        views.TreatmentTemplateCreateView.as_view(),
-        name="template_create",
-    ),
-    path(
-        "templates/<int:pk>/update/",
-        views.TreatmentTemplateUpdateView.as_view(),
-        name="template_update",
-    ),
     path("services/", views.DentalServiceListView.as_view(), name="service_list"),
     path(
         "services/create/",
@@ -34,5 +23,10 @@ urlpatterns = [
         "services/<int:pk>/update/",
         views.DentalServiceUpdateView.as_view(),
         name="service_update",
+    ),
+    path(
+        "services/<int:pk>/delete/",
+        views.DentalServiceDeleteView.as_view(),
+        name="service_delete",
     ),
 ]

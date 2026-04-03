@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Treatment, TreatmentTemplate
+from .models import Treatment, DentalService
 
 
 @admin.register(Treatment)
@@ -24,8 +24,14 @@ class TreatmentAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
 
 
-@admin.register(TreatmentTemplate)
-class TreatmentTemplateAdmin(admin.ModelAdmin):
-    list_display = ["name", "category", "default_cost", "is_active"]
+@admin.register(DentalService)
+class DentalServiceAdmin(admin.ModelAdmin):
+    list_display = [
+        "name",
+        "category",
+        "default_price",
+        "duration_minutes",
+        "is_active",
+    ]
     list_filter = ["category", "is_active"]
-    search_fields = ["name", "description", "category"]
+    search_fields = ["name", "description"]

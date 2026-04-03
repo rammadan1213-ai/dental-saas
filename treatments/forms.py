@@ -1,5 +1,5 @@
 from django import forms
-from .models import Treatment, TreatmentTemplate
+from .models import Treatment, DentalService
 from accounts.models import User
 
 
@@ -9,6 +9,7 @@ class TreatmentForm(forms.ModelForm):
         fields = [
             "patient",
             "appointment",
+            "dental_service",
             "dentist",
             "diagnosis",
             "procedure",
@@ -22,6 +23,7 @@ class TreatmentForm(forms.ModelForm):
         widgets = {
             "patient": forms.Select(attrs={"class": "form-control"}),
             "appointment": forms.Select(attrs={"class": "form-control"}),
+            "dental_service": forms.Select(attrs={"class": "form-control"}),
             "dentist": forms.Select(attrs={"class": "form-control"}),
             "diagnosis": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "procedure": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -40,19 +42,17 @@ class TreatmentForm(forms.ModelForm):
         self.fields["dentist"].queryset = User.objects.filter(
             role=User.Role.DENTIST, is_active=True
         )
+        self.fields["dental_service"].queryset = DentalService.objects.filter(
+            is_active=True
+        )
+        self.fields["dental_service"].required = False
 
-
-class TreatmentTemplateForm(forms.ModelForm):
-    class Meta:
-        model = TreatmentTemplate
-        fields = ["name", "description", "default_cost", "category", "is_active"]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control"}),
-            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "default_cost": forms.NumberInput(attrs={"class": "form-control"}),
-            "category": forms.TextInput(attrs={"class": "form-control"}),
-            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-        }
+    def clean(self):
+        cleaned_data = super().clean()
+        dental_service = cleaned_data.get("dental_service")
+        if dental_service and not cleaned_data.get("cost"):
+            cleaned_data["cost"] = dental_service.default_price
+        return cleaned_data
 
 
 class TreatmentFilterForm(forms.Form):

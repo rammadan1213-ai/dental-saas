@@ -11,8 +11,8 @@ from django.contrib import messages
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Treatment, TreatmentTemplate, DentalService
-from .forms import TreatmentForm, TreatmentTemplateForm, TreatmentFilterForm
+from .models import Treatment, DentalService
+from .forms import TreatmentForm, TreatmentFilterForm
 
 
 class ClinicFilterMixin:
@@ -71,7 +71,9 @@ class TreatmentListView(
                 | Q(diagnosis__icontains=search)
             )
 
-        return queryset.select_related("patient", "dentist", "appointment")
+        return queryset.select_related(
+            "patient", "dentist", "appointment", "dental_service"
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -131,95 +133,6 @@ class TreatmentDetailView(
     context_object_name = "treatment"
 
 
-class TreatmentTemplateListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
-    model = TreatmentTemplate
-    template_name = "treatments/template_list.html"
-    context_object_name = "templates"
-
-    def get_queryset(self):
-        return TreatmentTemplate.objects.filter(is_active=True)
-
-
-class TreatmentTemplateCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
-    model = TreatmentTemplate
-    form_class = TreatmentTemplateForm
-    template_name = "treatments/template_form.html"
-    success_url = reverse_lazy("treatments:template_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Treatment template created successfully.")
-        return super().form_valid(form)
-
-
-class TreatmentTemplateUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
-    model = TreatmentTemplate
-    form_class = TreatmentTemplateForm
-    template_name = "treatments/template_form.html"
-    success_url = reverse_lazy("treatments:template_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Treatment template created successfully.")
-        return super().form_valid(form)
-
-
-class TreatmentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
-    model = Treatment
-    form_class = TreatmentForm
-    template_name = "treatments/treatment_form.html"
-    success_url = reverse_lazy("treatments:treatment_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Treatment updated successfully.")
-        return super().form_valid(form)
-
-
-class TreatmentDeleteView(LoginRequiredMixin, StaffRequiredMixin, DeleteView):
-    model = Treatment
-    template_name = "treatments/treatment_confirm_delete.html"
-    success_url = reverse_lazy("treatments:treatment_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Treatment deleted successfully.")
-        return super().form_valid(form)
-
-
-class TreatmentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailView):
-    model = Treatment
-    template_name = "treatments/treatment_detail.html"
-    context_object_name = "treatment"
-
-
-class TreatmentTemplateListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
-    model = TreatmentTemplate
-    template_name = "treatments/template_list.html"
-    context_object_name = "templates"
-
-    def get_queryset(self):
-        return TreatmentTemplate.objects.filter(is_active=True)
-
-
-class TreatmentTemplateCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
-    model = TreatmentTemplate
-    form_class = TreatmentTemplateForm
-    template_name = "treatments/template_form.html"
-    success_url = reverse_lazy("treatments:template_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Treatment template created successfully.")
-        return super().form_valid(form)
-
-
-class TreatmentTemplateUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
-    model = TreatmentTemplate
-    form_class = TreatmentTemplateForm
-    template_name = "treatments/template_form.html"
-    success_url = reverse_lazy("treatments:template_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Treatment template updated successfully.")
-        return super().form_valid(form)
-
-
 class DentalServiceListView(LoginRequiredMixin, ListView):
     model = DentalService
     template_name = "treatments/service_list.html"
@@ -272,3 +185,12 @@ class DentalServiceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateVie
     def form_valid(self, form):
         messages.success(self.request, "Service updated successfully.")
         return super().form_valid(form)
+
+
+class DentalServiceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = DentalService
+    template_name = "treatments/service_confirm_delete.html"
+    success_url = reverse_lazy("treatments:service_list")
+
+    def test_func(self):
+        return self.request.user.is_admin_user

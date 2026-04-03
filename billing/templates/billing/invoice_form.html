@@ -46,14 +46,34 @@
                     {% csrf_token %}
                     
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             {{ form.patient|as_crispy_field }}
                         </div>
+                        <div class="col-md-4">
+                            {{ form.treatment|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Dental Service</label>
+                            <select id="dentalServiceSelect" class="form-select" onchange="loadDentalService()">
+                                <option value="">Select a service (optional)</option>
+                                {% for service in dental_services %}
+                                <option value="{{ service.id }}" data-price="{{ service.default_price }}" data-name="{{ service.name }}">
+                                    {{ service.name }} - ${{ service.default_price }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
                         <div class="col-md-3">
                             {{ form.issue_date|as_crispy_field }}
                         </div>
                         <div class="col-md-3">
                             {{ form.due_date|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.status|as_crispy_field }}
                         </div>
                     </div>
                     
@@ -255,6 +275,34 @@ function addItem() {
     
     document.getElementById('id_items-TOTAL_FORMS').value = formCount + 1;
     calculateTotals();
+}
+
+function loadDentalService() {
+    const select = document.getElementById('dentalServiceSelect');
+    const option = select.options[select.selectedIndex];
+    
+    if (option && option.value) {
+        const price = parseFloat(option.dataset.price) || 0;
+        const name = option.dataset.name || '';
+        
+        const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+        const firstRow = table.querySelector('.item-row');
+        
+        if (firstRow) {
+            const descInput = firstRow.querySelector('[id$="-description"]');
+            const priceInput = firstRow.querySelector('[id$="-unit_price"]');
+            const totalCell = firstRow.querySelector('.total-cell');
+            
+            if (descInput) descInput.value = name;
+            if (priceInput) {
+                priceInput.value = price;
+                priceInput.dispatchEvent(new Event('change'));
+            }
+            if (totalCell) totalCell.textContent = '$' + price.toFixed(2);
+        }
+        
+        calculateTotals();
+    }
 }
 </script>
 {% endblock %}

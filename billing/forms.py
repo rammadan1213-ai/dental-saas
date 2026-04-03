@@ -65,6 +65,7 @@ class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
         fields = [
+            "invoice",
             "amount",
             "payment_date",
             "payment_method",
@@ -72,6 +73,7 @@ class PaymentForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
+            "invoice": forms.Select(attrs={"class": "form-control"}),
             "amount": forms.NumberInput(attrs={"class": "form-control"}),
             "payment_date": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}

@@ -6,6 +6,38 @@ from appointments.models import Appointment
 from billing.models import Invoice
 
 
+class DentalService(models.Model):
+    class Category(models.TextChoices):
+        PREVENTIVE = "preventive", _("Preventive")
+        RESTORATIVE = "restorative", _("Restorative")
+        ENDODONTICS = "endodontics", _("Endodontics (RCT)")
+        PERIODONTICS = "periodontics", _("Periodontics")
+        PROSTHODONTICS = "prosthodontics", _("Prosthodontics")
+        ORAL_SURGERY = "oral_surgery", _("Oral Surgery")
+        ORTHODONTICS = "orthodontics", _("Orthodontics")
+        COSMETIC = "cosmetic", _("Cosmetic")
+        EMERGENCY = "emergency", _("Emergency")
+        OTHER = "other", _("Other")
+
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=30, choices=Category.choices)
+    default_price = models.DecimalField(max_digits=10, decimal_places=2)
+    duration_minutes = models.IntegerField(default=30)
+    is_active = models.BooleanField(default=True)
+    requires_appointment = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category", "name"]
+        verbose_name = _("Dental Service")
+        verbose_name_plural = _("Dental Services")
+
+    def __str__(self):
+        return f"{self.name} - ${self.default_price}"
+
+
 class Treatment(models.Model):
     class Status(models.TextChoices):
         PLANNED = "planned", _("Planned")
@@ -25,6 +57,13 @@ class Treatment(models.Model):
     )
     appointment = models.ForeignKey(
         Appointment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="treatments",
+    )
+    dental_service = models.ForeignKey(
+        DentalService,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -56,51 +95,7 @@ class Treatment(models.Model):
     def __str__(self):
         return f"{self.patient.full_name} - {self.procedure[:50]}"
 
-
-class TreatmentTemplate(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField()
-    default_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    category = models.CharField(max_length=100)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["category", "name"]
-        verbose_name = _("Treatment Template")
-        verbose_name_plural = _("Treatment Templates")
-
-    def __str__(self):
-        return f"{self.name} ({self.category})"
-
-
-class DentalService(models.Model):
-    class Category(models.TextChoices):
-        PREVENTIVE = "preventive", _("Preventive")
-        RESTORATIVE = "restorative", _("Restorative")
-        ENDODONTICS = "endodontics", _("Endodontics (RCT)")
-        PERIODONTICS = "periodontics", _("Periodontics")
-        PROSTHODONTICS = "prosthodontics", _("Prosthodontics")
-        ORAL_SURGERY = "oral_surgery", _("Oral Surgery")
-        ORTHODONTICS = "orthodontics", _("Orthodontics")
-        COSMETIC = "cosmetic", _("Cosmetic")
-        EMERGENCY = "emergency", _("Emergency")
-        OTHER = "other", _("Other")
-
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    category = models.CharField(max_length=30, choices=Category.choices)
-    default_price = models.DecimalField(max_digits=10, decimal_places=2)
-    duration_minutes = models.IntegerField(default=30)
-    is_active = models.BooleanField(default=True)
-    requires_appointment = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["category", "name"]
-        verbose_name = _("Dental Service")
-        verbose_name_plural = _("Dental Services")
-
-    def __str__(self):
-        return f"{self.name} - ${self.default_price}"
+    def save(self, *args, **kwargs):
+        if self.dental_service and not self.cost:
+            self.cost = self.dental_service.default_price
+        super().save(*args, **kwargs)

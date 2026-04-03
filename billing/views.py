@@ -173,12 +173,14 @@ class InvoiceCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
         else:
             context["items_formset"] = InvoiceItemFormSet()
 
-        from treatments.models import Treatment
+        from treatments.models import Treatment, DentalService
 
         treatments = Treatment.objects.all()
         if hasattr(self.request.user, "clinic") and self.request.user.clinic:
             treatments = treatments.filter(clinic=self.request.user.clinic)
         context["treatments"] = treatments
+
+        context["dental_services"] = DentalService.objects.filter(is_active=True)
 
         return context
 
@@ -339,6 +341,54 @@ class PaymentListView(
             .get_queryset()
             .select_related("invoice", "invoice__patient", "recorded_by")
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from django.utils import timezone
+
+        clinic = getattr(self.request.user, "clinic", None)
+        invoices = Invoice.objects.all()
+        if clinic:
+            invoices = invoices.filter(clinic=clinic)
+
+        context["invoices_for_form"] = invoices.select_related("patient", "treatment")
+
+        total_paid = sum(inv.amount_paid for inv in invoices)
+        total_pending = sum(inv.balance_due for inv in invoices)
+        total_revenue = sum(inv.total_amount for inv in invoices)
+
+        context["total_paid"] = total_paid
+        context["total_pending"] = total_pending
+        context["total_revenue"] = total_revenue
+        context["total_count"] = invoices.count()
+        context["paid_count"] = invoices.filter(status="paid").count()
+        context["pending_count"] = invoices.filter(
+            status__in=["sent", "partial"]
+        ).count()
+        context["today"] = timezone.now().date().isoformat()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        from .forms import PaymentForm
+        from django.contrib import messages
+
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            invoice = form.cleaned_data["invoice"]
+            clinic = getattr(request.user, "clinic", None)
+
+            payment = form.save(commit=False)
+            payment.clinic = clinic
+            payment.recorded_by = request.user
+            payment.invoice = invoice
+            payment.save()
+
+            messages.success(request, "Payment recorded successfully.")
+        else:
+            messages.error(request, "Error recording payment.")
+
+        return self.get(request, *args, **kwargs)
 
 
 def export_invoice_pdf(request, pk):
