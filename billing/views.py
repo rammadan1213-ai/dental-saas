@@ -441,46 +441,46 @@ def create_checkout_session(request):
     if not clinic:
         return JsonResponse({"error": "No clinic found"}, status=400)
 
-    try:
-        subscription = ClinicSubscription.objects.get(clinic=clinic)
-        plan_prices = {
-            "starter": 1000,
-            "pro": 2500,
-            "enterprise": 5000,
-        }
-        plan_names = {
-            "starter": "Starter Plan",
-            "pro": "Pro Plan",
-            "enterprise": "Enterprise Plan",
-        }
+    subscription = getattr(clinic, "subscription", None)
+    if not subscription:
+        return JsonResponse({"error": "No subscription found"}, status=400)
 
-        amount = plan_prices.get(subscription.plan, 1000)
-        plan_name = plan_names.get(subscription.plan, "Starter Plan")
+    plan_prices = {
+        "starter": 1000,
+        "pro": 2500,
+        "enterprise": 5000,
+    }
+    plan_names = {
+        "starter": "Starter Plan",
+        "pro": "Pro Plan",
+        "enterprise": "Enterprise Plan",
+    }
 
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "product_data": {"name": plan_name},
-                        "unit_amount": amount,
-                    },
-                    "quantity": 1,
-                }
-            ],
-            mode="payment",
-            success_url=request.build_absolute_uri("/dashboard/") + "?payment=success",
-            cancel_url=request.build_absolute_uri("/dashboard/") + "?payment=cancel",
-            metadata={
-                "clinic_id": clinic.id,
-                "plan": subscription.plan,
-            },
-        )
+    amount = plan_prices.get(subscription.plan, 1000)
+    plan_name = plan_names.get(subscription.plan, "Starter Plan")
 
-        return JsonResponse({"id": session.id})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {"name": plan_name},
+                    "unit_amount": amount,
+                },
+                "quantity": 1,
+            }
+        ],
+        mode="payment",
+        success_url=request.build_absolute_uri("/dashboard/") + "?payment=success",
+        cancel_url=request.build_absolute_uri("/dashboard/") + "?payment=cancel",
+        metadata={
+            "clinic_id": clinic.id,
+            "plan": subscription.plan,
+        },
+    )
+
+    return JsonResponse({"id": session.id})
 
 
 @csrf_exempt
@@ -510,7 +510,9 @@ def stripe_webhook(request):
         if clinic_id:
             try:
                 clinic = Clinic.objects.get(id=clinic_id)
-                sub, created = ClinicSubscription.objects.get_or_create(clinic=clinic)
+                sub = getattr(clinic, "subscription", None)
+                if not sub:
+                    sub = ClinicSubscription(clinic=clinic)
                 sub.is_active = True
                 sub.plan = plan
                 sub.stripe_subscription_id = session.get("subscription") or session.get(
@@ -526,11 +528,12 @@ def stripe_webhook(request):
 
         if subscription_id:
             try:
-                sub = ClinicSubscription.objects.get(
+                sub = ClinicSubscription.objects.filter(
                     stripe_subscription_id=subscription_id
-                )
-                sub.is_active = False
-                sub.save()
+                ).first()
+                if sub:
+                    sub.is_active = False
+                    sub.save()
             except Exception:
                 pass
 
@@ -538,11 +541,12 @@ def stripe_webhook(request):
         subscription = event["data"]["object"]
 
         try:
-            sub = ClinicSubscription.objects.get(
+            sub = ClinicSubscription.objects.filter(
                 stripe_subscription_id=subscription["id"]
-            )
-            sub.is_active = False
-            sub.save()
+            ).first()
+            if sub:
+                sub.is_active = False
+                sub.save()
         except Exception:
             pass
 
@@ -557,7 +561,10 @@ def subscription_view(request):
     if not clinic:
         return redirect("dashboard:home")
 
-    subscription, created = ClinicSubscription.objects.get_or_create(clinic=clinic)
+    subscription = getattr(clinic, "subscription", None)
+    if not subscription:
+        subscription = ClinicSubscription(clinic=clinic)
+        subscription.save()
 
     plan_info = {
         "starter": {
@@ -593,12 +600,12 @@ def cancel_subscription(request):
 
     clinic = getattr(request.user, "clinic", None)
     if clinic:
-        try:
-            sub = ClinicSubscription.objects.get(clinic=clinic)
+        sub = getattr(clinic, "subscription", None)
+        if sub:
             sub.is_active = False
             sub.save()
             messages.success(request, "Subscription canceled successfully.")
-        except ClinicSubscription.DoesNotExist:
+        else:
             messages.error(request, "No subscription found.")
 
     return redirect("billing:subscription")
