@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from accounts.models import User
 from patients.models import Patient
 from appointments.models import Appointment
+from billing.models import Invoice
 
 
 class Treatment(models.Model):

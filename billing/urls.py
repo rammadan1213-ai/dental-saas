@@ -4,6 +4,7 @@ from . import views
 app_name = "billing"
 
 urlpatterns = [
+    # Web Views
     path("invoices/", views.InvoiceListView.as_view(), name="invoice_list"),
     path("invoices/create/", views.InvoiceCreateView.as_view(), name="invoice_create"),
     path(

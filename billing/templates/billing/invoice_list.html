@@ -2,87 +2,239 @@
 {% block title %}Invoices - Dental Clinic{% endblock %}
 {% block page_title %}Billing & Invoices{% endblock %}
 
+{% block extra_css %}
+<style>
+    .stat-card {
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .stat-card.success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+    .stat-card.primary { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
+    .stat-card.warning { background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333; }
+    .stat-card.danger { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; }
+    .stat-label { font-size: 0.9rem; opacity: 0.9; }
+    
+    .filter-tabs {
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 1.5rem;
+    }
+    .filter-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        position: relative;
+    }
+    .filter-tabs .nav-link.active {
+        color: #0d6efd;
+        background: transparent;
+    }
+    .filter-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #0d6efd;
+    }
+    .filter-tabs .nav-link .badge {
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+    
+    .status-paid { background-color: #28a745 !important; }
+    .status-partial { background-color: #ffc107 !important; color: #333 !important; }
+    .status-sent, .status-overdue { background-color: #dc3545 !important; }
+    .status-draft { background-color: #6c757d !important; }
+    .status-cancelled { background-color: #adb5bd !important; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="stat-card success">
+<!-- Summary Cards -->
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <div class="stat-card primary">
             <div class="stat-value">${{ total_revenue|floatformat:2 }}</div>
-            <div class="stat-label">Total Revenue</div>
+            <div class="stat-label">Total Invoiced</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card primary">
+    <div class="col-md-3">
+        <div class="stat-card success">
             <div class="stat-value">${{ total_paid|floatformat:2 }}</div>
             <div class="stat-label">Total Paid</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="stat-card warning">
             <div class="stat-value">${{ total_outstanding|floatformat:2 }}</div>
             <div class="stat-label">Outstanding</div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="stat-card danger">
+            <div class="stat-value">{{ invoices.count }}</div>
+            <div class="stat-label">Total Invoices</div>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-    <div class="card-header">
-        <div class="row">
+<!-- Filter Tabs -->
+<ul class="nav filter-tabs" id="statusTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" href="?status=">
+            All <span class="badge bg-secondary">{{ total_count }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="?status=paid">
+            Paid <span class="badge bg-success">{{ paid_count }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="?status=partial">
+            Partial <span class="badge bg-warning">{{ partial_count }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="?status=sent">
+            Pending <span class="badge bg-danger">{{ pending_count }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="?status=overdue">
+            Overdue <span class="badge bg-dark">{{ overdue_count }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="card mb-4">
+    <div class="card-header bg-white py-3">
+        <div class="row align-items-center">
             <div class="col-md-6">
-                <h5 class="mb-0">Invoices</h5>
+                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Invoices</h5>
             </div>
             <div class="col-md-6">
-                <a href="{% url 'billing:invoice_create' %}" class="btn btn-primary float-end">
-                    <i class="bi bi-plus-circle"></i> New Invoice
-                </a>
+                <div class="float-end d-flex gap-2">
+                    <a href="{% url 'billing:invoice_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>New Invoice
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="exportCSV()">
+                        <i class="bi bi-download me-1"></i>Export
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-    <div class="card-body">
+    
+    <!-- Search & Filter Form -->
+    <div class="card-body border-bottom">
+        <form method="get" class="row g-3" id="filterForm">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" placeholder="Search invoice # or patient..." 
+                       value="{{ request.GET.search|default:'' }}">
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="sent" {% if request.GET.status == 'sent' %}selected{% endif %}>Sent</option>
+                    <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="partial" {% if request.GET.status == 'partial' %}selected{% endif %}>Partial</option>
+                    <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_from" class="form-control" 
+                       value="{{ request.GET.date_from|default:'' }}" placeholder="From">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_to" class="form-control" 
+                       value="{{ request.GET.date_to|default:'' }}" placeholder="To">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>Filter
+                </button>
+            </div>
+            <div class="col-md-1">
+                <a href="{% url 'billing:invoice_list' %}" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
+            <table class="table table-hover mb-0" id="invoiceTable">
+                <thead class="table-light">
                     <tr>
                         <th>Invoice #</th>
                         <th>Patient</th>
                         <th>Issue Date</th>
                         <th>Due Date</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Remaining</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for invoice in invoices %}
                     <tr>
                         <td>
-                            <a href="{% url 'billing:invoice_detail' invoice.pk %}">
+                            <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="fw-bold">
                                 {{ invoice.invoice_number }}
                             </a>
                         </td>
-                        <td>{{ invoice.patient.full_name }}</td>
+                        <td>
+                            <div>{{ invoice.patient.full_name }}</div>
+                            <small class="text-muted">{{ invoice.patient.phone }}</small>
+                        </td>
                         <td>{{ invoice.issue_date }}</td>
                         <td>{{ invoice.due_date }}</td>
-                        <td>${{ invoice.total_amount|floatformat:2 }}</td>
-                        <td>${{ invoice.amount_paid|floatformat:2 }}</td>
-                        <td>
-                            <span class="badge bg-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                        <td class="text-end">${{ invoice.total_amount|floatformat:2 }}</td>
+                        <td class="text-end text-success">${{ invoice.amount_paid|floatformat:2 }}</td>
+                        <td class="text-end {% if invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
+                            ${{ invoice.balance_due|floatformat:2 }}
                         </td>
-                        <td>
-                            <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-sm btn-info">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{% url 'billing:invoice_pdf' invoice.pk %}" class="btn btn-sm btn-secondary" target="_blank">
-                                <i class="bi bi-file-pdf"></i>
-                            </a>
-                            <a href="{% url 'billing:payment_create' invoice.pk %}" class="btn btn-sm btn-success">
-                                <i class="bi bi-currency-dollar"></i>
-                            </a>
+                        <td class="text-center">
+                            <span class="badge status-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'billing:invoice_update' invoice.pk %}" class="btn btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'billing:invoice_pdf' invoice.pk %}" class="btn btn-outline-danger" target="_blank" title="PDF">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+                                {% if invoice.balance_due > 0 %}
+                                <a href="{% url 'billing:payment_create' invoice.pk %}" class="btn btn-outline-success" title="Add Payment">
+                                    <i class="bi bi-currency-dollar"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No invoices found</td>
+                        <td colspan="9" class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 d-block text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No invoices found</p>
+                            <a href="{% url 'billing:invoice_create' %}" class="btn btn-primary mt-3">
+                                <i class="bi bi-plus-circle me-1"></i>Create First Invoice
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -90,24 +242,74 @@
         </div>
         
         {% if page_obj.has_other_pages %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                </li>
-                {% endif %}
-                <li class="page-item active">
-                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                </li>
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
+        <div class="card-footer bg-white">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
         {% endif %}
     </div>
 </div>
+
+<!-- Chart Section -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Revenue Overview</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total Invoiced', 'Total Paid', 'Outstanding'],
+            datasets: [{
+                label: 'Amount ($)',
+                data: [
+                    {{ total_revenue|floatformat:2 }},
+                    {{ total_paid|floatformat:2 }},
+                    {{ total_outstanding|floatformat:2 }}
+                ],
+                backgroundColor: ['#0d6efd', '#28a745', '#ffc107']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } }
+        }
+    });
+});
+
+function exportCSV() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('format', 'csv');
+    window.location.href = '{% url "billing:invoice_list" %}?' + params.toString();
+}
+</script>
 {% endblock %}

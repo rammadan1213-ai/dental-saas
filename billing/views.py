@@ -99,13 +99,27 @@ class InvoiceListView(
         context = super().get_context_data(**kwargs)
         context["filter_form"] = InvoiceFilterForm(self.request.GET)
 
-        total_revenue = sum(inv.total_amount for inv in context["invoices"])
-        total_paid = sum(inv.amount_paid for inv in context["invoices"])
+        invoices = context["invoices"]
+
+        total_revenue = sum(inv.total_amount for inv in invoices)
+        total_paid = sum(inv.amount_paid for inv in invoices)
         total_outstanding = total_revenue - total_paid
 
         context["total_revenue"] = total_revenue
         context["total_paid"] = total_paid
         context["total_outstanding"] = total_outstanding
+
+        base_qs = Invoice.objects.filter(
+            clinic=getattr(self.request.user, "clinic", None)
+        )
+        if self.request.user.is_superuser:
+            base_qs = Invoice.objects.all()
+
+        context["total_count"] = base_qs.count()
+        context["paid_count"] = base_qs.filter(status="paid").count()
+        context["partial_count"] = base_qs.filter(status="partial").count()
+        context["pending_count"] = base_qs.filter(status="sent").count()
+        context["overdue_count"] = base_qs.filter(status="overdue").count()
 
         return context
 
@@ -152,6 +166,14 @@ class InvoiceCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
             context["items_formset"] = InvoiceItemFormSet(self.request.POST)
         else:
             context["items_formset"] = InvoiceItemFormSet()
+
+        from treatments.models import Treatment
+
+        treatments = Treatment.objects.all()
+        if hasattr(self.request.user, "clinic") and self.request.user.clinic:
+            treatments = treatments.filter(clinic=self.request.user.clinic)
+        context["treatments"] = treatments
+
         return context
 
     def form_valid(self, form):
@@ -162,6 +184,18 @@ class InvoiceCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
         form.instance.created_by = self.request.user
         clinic = getattr(self.request.user, "clinic", None)
         form.instance.clinic = clinic
+
+        treatment = form.cleaned_data.get("treatment")
+        if treatment and not items_formset.initial:
+            form.instance.patient = treatment.patient
+            items_data = [
+                {
+                    "description": treatment.procedure,
+                    "quantity": 1,
+                    "unit_price": treatment.cost,
+                }
+            ]
+            items_formset = InvoiceItemFormSet(initial=items_data)
 
         if items_formset.is_valid():
             saved_items = items_formset.save(commit=False)

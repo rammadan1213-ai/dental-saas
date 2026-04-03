@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
 from patients.models import Patient
 from accounts.models import User
@@ -24,6 +25,13 @@ class Invoice(models.Model):
     patient = models.ForeignKey(
         Patient, on_delete=models.CASCADE, related_name="invoices"
     )
+    treatment = models.ForeignKey(
+        "treatments.Treatment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices",
+    )
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_invoices"
     )
@@ -34,6 +42,7 @@ class Invoice(models.Model):
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    remaining_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.DRAFT
     )
@@ -51,21 +60,58 @@ class Invoice(models.Model):
 
     @property
     def balance_due(self):
-        return self.total_amount - self.amount_paid
+        total = float(self.total_amount or 0)
+        paid = float(self.amount_paid or 0)
+        return max(0, total - paid)
+
+    @property
+    def remaining_amount_prop(self):
+        return self.balance_due
 
     @property
     def is_fully_paid(self):
-        return self.amount_paid >= self.total_amount
+        return float(self.amount_paid or 0) >= float(self.total_amount or 0)
+
+    @property
+    def payment_status(self):
+        paid = float(self.amount_paid or 0)
+        total = float(self.total_amount or 0)
+        if paid >= total:
+            return "paid"
+        elif paid > 0:
+            return "partial"
+        return self.status
+
+    @property
+    def paid_percentage(self):
+        total = float(self.total_amount or 0)
+        if total == 0:
+            return 0
+        return min(100, (float(self.amount_paid or 0) / total) * 100)
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            self.invoice_number = Invoice.generate_invoice_number()
+        self.remaining_amount = self.balance_due
+        super().save(*args, **kwargs)
 
     @classmethod
     def generate_invoice_number(cls):
-        last_invoice = cls.objects.order_by("-created_at").first()
+        from django.utils import timezone
+
+        today = timezone.now().date()
+        prefix = f"INV-{today.strftime('%Y%m%d')}"
+        last_invoice = (
+            cls.objects.filter(invoice_number__startswith=prefix)
+            .order_by("-invoice_number")
+            .first()
+        )
         if last_invoice:
-            last_number = int(last_invoice.invoice_number.split("-")[-1])
-            new_number = last_number + 1
+            last_num = int(last_invoice.invoice_number.split("-")[-1])
+            new_num = last_num + 1
         else:
-            new_number = 1
-        return f"INV-{new_number:06d}"
+            new_num = 1
+        return f"{prefix}-{new_num:04d}"
 
 
 class InvoiceItem(models.Model):
@@ -134,11 +180,18 @@ class Payment(models.Model):
         self.update_invoice_amount_paid()
 
     def update_invoice_amount_paid(self):
-        invoice = self.invoice
-        total_paid = sum(p.amount for p in invoice.payments.all())
-        invoice.amount_paid = total_paid
-        if total_paid >= invoice.total_amount:
-            invoice.status = Invoice.Status.PAID
-        elif total_paid > 0:
-            invoice.status = Invoice.Status.PARTIAL
-        invoice.save()
+        from django.db import transaction
+
+        with transaction.atomic():
+            invoice = Invoice.objects.select_for_update().get(pk=self.invoice.pk)
+            total_paid = sum(p.amount for p in invoice.payments.all())
+            invoice.amount_paid = total_paid
+
+            if total_paid >= float(invoice.total_amount or 0):
+                invoice.status = Invoice.Status.PAID
+            elif total_paid > 0:
+                invoice.status = Invoice.Status.PARTIAL
+            else:
+                invoice.status = Invoice.Status.SENT
+
+            invoice.save(update_fields=["amount_paid", "status", "updated_at"])
