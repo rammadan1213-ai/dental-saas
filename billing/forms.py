@@ -21,7 +21,6 @@ class InvoiceForm(forms.ModelForm):
         model = Invoice
         fields = [
             "patient",
-            "treatment",
             "issue_date",
             "due_date",
             "tax_amount",
@@ -31,7 +30,6 @@ class InvoiceForm(forms.ModelForm):
         ]
         widgets = {
             "patient": forms.Select(attrs={"class": "form-control"}),
-            "treatment": forms.Select(attrs={"class": "form-control"}),
             "issue_date": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),

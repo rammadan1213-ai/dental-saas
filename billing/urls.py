@@ -37,4 +37,10 @@ urlpatterns = [
     # Subscription
     path("subscription/", views.subscription_view, name="subscription"),
     path("subscription/cancel/", views.cancel_subscription, name="cancel_subscription"),
+    # Create invoice from treatment
+    path(
+        "invoices/create/from-treatment/<int:patient_id>/<int:treatment_id>/",
+        views.create_invoice_from_treatment,
+        name="create_invoice_from_treatment",
+    ),
 ]

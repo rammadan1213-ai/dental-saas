@@ -19,10 +19,11 @@ from io import BytesIO
 import stripe
 import json
 from django.utils import timezone
-from .models import Invoice, InvoiceItem, Payment
+from .models import Invoice, InvoiceItem, Payment, Subscription
 from .forms import InvoiceForm, InvoiceItemFormSet, PaymentForm, InvoiceFilterForm
+from treatments.models import Treatment
 from utils.permissions import has_feature, get_plan_features
-from clinics.models import Subscription
+from clinics.models import Subscription as ClinicSubscription
 
 
 class ClinicFilterMixin:
@@ -589,11 +590,44 @@ def cancel_subscription(request):
     clinic = getattr(request.user, "clinic", None)
     if clinic:
         try:
-            sub = Subscription.objects.get(clinic=clinic)
-            sub.status = Subscription.Status.CANCELED
+            sub = ClinicSubscription.objects.get(clinic=clinic)
+            sub.status = ClinicSubscription.Status.CANCELED
             sub.save()
             messages.success(request, "Subscription canceled successfully.")
-        except Subscription.DoesNotExist:
+        except ClinicSubscription.DoesNotExist:
             messages.error(request, "No subscription found.")
 
     return redirect("billing:subscription")
+
+
+def create_invoice_from_treatment(request, patient_id, treatment_id):
+    treatment = get_object_or_404(Treatment, id=treatment_id, patient_id=patient_id)
+
+    clinic = getattr(request.user, "clinic", None)
+
+    invoice = Invoice.objects.create(
+        clinic=clinic,
+        patient_id=patient_id,
+        created_by=request.user,
+        issue_date=timezone.now().date(),
+        due_date=timezone.now().date() + timezone.timedelta(days=30),
+        status=Invoice.Status.PENDING,
+    )
+
+    InvoiceItem.objects.create(
+        invoice=invoice,
+        treatment=treatment,
+        description=treatment.procedure or treatment.dental_service.name
+        if treatment.dental_service
+        else treatment.procedure,
+        quantity=1,
+        unit_price=treatment.cost,
+        total_price=treatment.cost,
+    )
+
+    invoice.subtotal = treatment.cost
+    invoice.total_amount = treatment.cost
+    invoice.save()
+
+    messages.success(request, f"Invoice created for {treatment.procedure}")
+    return redirect("billing:invoice_detail", invoice.id)

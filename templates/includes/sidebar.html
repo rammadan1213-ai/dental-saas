@@ -244,6 +244,21 @@
                 Billing
             </a>
         </li>
+        
+        {% if not user.is_superuser %}
+        <li class="nav-item">
+            <a class="nav-link {% if 'billing/subscription' in request.path %}active{% endif %}" href="{% url 'billing:subscription' %}">
+                <i class="bi bi-box-seam"></i>
+                Subscription
+            </a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'billing/payments' in request.path %}active{% endif %}" href="{% url 'billing:payment_list' %}">
+                <i class="bi bi-credit-card"></i>
+                Payments
+            </a>
+        </li>
         {% endif %}
     </ul>
     

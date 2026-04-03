@@ -121,3 +121,17 @@ def get_plan_features(plan):
         },
     }
     return features.get(plan, features["basic"])
+
+
+def check_plan(user):
+    """Check if user's subscription is active"""
+    if not user.is_authenticated:
+        return False
+
+    from billing.models import Subscription
+
+    try:
+        sub = Subscription.objects.get(user=user)
+        return sub.active
+    except Subscription.DoesNotExist:
+        return False

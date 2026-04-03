@@ -1,8 +1,31 @@
 from django.db import models
-from django.db.models import Sum
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from patients.models import Patient
-from accounts.models import User
+
+
+User = settings.AUTH_USER_MODEL
+
+
+class Subscription(models.Model):
+    PLAN_CHOICES = [
+        ("basic", "Basic"),
+        ("pro", "Pro"),
+        ("enterprise", "Enterprise"),
+    ]
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="billing_subscription"
+    )
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default="basic")
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+
+    active = models.BooleanField(default=False)
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.plan}"
 
 
 class Invoice(models.Model):
@@ -23,14 +46,7 @@ class Invoice(models.Model):
     )
     invoice_number = models.CharField(max_length=50, unique=True)
     patient = models.ForeignKey(
-        Patient, on_delete=models.CASCADE, related_name="invoices"
-    )
-    treatment = models.ForeignKey(
-        "treatments.Treatment",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="invoices",
+        "patients.Patient", on_delete=models.CASCADE, related_name="invoices"
     )
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_invoices"
@@ -115,10 +131,18 @@ class Invoice(models.Model):
             new_num = 1
         return f"{prefix}-{new_num:04d}"
 
+    def update_total(self):
+        total = sum(item.price for item in self.items.all())
+        self.total_amount = total
+        self.save()
+
 
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="items")
-    description = models.CharField(max_length=500)
+    treatment = models.ForeignKey(
+        "treatments.Treatment", on_delete=models.CASCADE, null=True, blank=True
+    )
+    description = models.CharField(max_length=500, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -128,11 +152,19 @@ class InvoiceItem(models.Model):
         verbose_name_plural = _("Invoice Items")
 
     def __str__(self):
-        return f"{self.description} - {self.total_price}"
+        return (
+            f"{self.treatment.name if self.treatment else 'N/A'} - {self.total_price}"
+        )
 
     def save(self, *args, **kwargs):
+        if self.treatment:
+            if not self.unit_price:
+                self.unit_price = self.treatment.cost
+            if not self.description:
+                self.description = self.treatment.procedure
         self.total_price = self.quantity * self.unit_price
         super().save(*args, **kwargs)
+        self.invoice.update_total()
 
 
 class Payment(models.Model):
