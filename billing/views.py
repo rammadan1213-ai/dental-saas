@@ -9,14 +9,19 @@ from django.views.generic import (
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Sum
 from django.template.loader import get_template
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from xhtml2pdf import pisa
 from io import BytesIO
+import stripe
+import json
 from .models import Invoice, InvoiceItem, Payment
 from .forms import InvoiceForm, InvoiceItemFormSet, PaymentForm, InvoiceFilterForm
 from utils.permissions import has_feature, get_plan_features
+from clinics.models import Subscription
 
 
 class ClinicFilterMixin:
@@ -355,3 +360,177 @@ def export_invoice_pdf(request, pk):
     if pisa_status.err:
         return HttpResponse("PDF generation error")
     return response
+
+
+from django.conf import settings
+
+stripe.api_key = (
+    settings.STRIPE_SECRET_KEY if hasattr(settings, "STRIPE_SECRET_KEY") else None
+)
+
+
+def create_checkout_session(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    clinic = getattr(request.user, "clinic", None)
+    if not clinic:
+        return JsonResponse({"error": "No clinic found"}, status=400)
+
+    try:
+        subscription = Subscription.objects.get(clinic=clinic)
+        plan_prices = {
+            "starter": 1000,
+            "pro": 2500,
+            "enterprise": 5000,
+        }
+        plan_names = {
+            "starter": "Starter Plan",
+            "pro": "Pro Plan",
+            "enterprise": "Enterprise Plan",
+        }
+
+        amount = plan_prices.get(subscription.plan, 1000)
+        plan_name = plan_names.get(subscription.plan, "Starter Plan")
+
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {"name": plan_name},
+                        "unit_amount": amount,
+                    },
+                    "quantity": 1,
+                }
+            ],
+            mode="payment",
+            success_url=request.build_absolute_uri("/dashboard/") + "?payment=success",
+            cancel_url=request.build_absolute_uri("/dashboard/") + "?payment=cancel",
+            metadata={
+                "clinic_id": clinic.id,
+                "plan": subscription.plan,
+            },
+        )
+
+        return JsonResponse({"id": session.id})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def stripe_webhook(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+    try:
+        from django.conf import settings
+
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except Exception as e:
+        return HttpResponse(status=400)
+
+    from clinics.models import Clinic
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        clinic_id = session.get("metadata", {}).get("clinic_id")
+        plan = session.get("metadata", {}).get("plan", "starter")
+
+        if clinic_id:
+            try:
+                clinic = Clinic.objects.get(id=clinic_id)
+                sub, created = Subscription.objects.get_or_create(clinic=clinic)
+                sub.status = Subscription.Status.ACTIVE
+                sub.plan = plan
+                sub.stripe_subscription_id = session.get("subscription") or session.get(
+                    "id"
+                )
+                sub.save()
+            except Exception:
+                pass
+
+    elif event["type"] == "invoice.payment_failed":
+        invoice = event["data"]["object"]
+        subscription_id = invoice.get("subscription")
+
+        if subscription_id:
+            try:
+                sub = Subscription.objects.get(stripe_subscription_id=subscription_id)
+                sub.status = Subscription.Status.INACTIVE
+                sub.save()
+            except Exception:
+                pass
+
+    elif event["type"] == "customer.subscription.deleted":
+        subscription = event["data"]["object"]
+
+        try:
+            sub = Subscription.objects.get(stripe_subscription_id=subscription["id"])
+            sub.status = Subscription.Status.CANCELED
+            sub.save()
+        except Exception:
+            pass
+
+    return HttpResponse(status=200)
+
+
+def subscription_view(request):
+    if not request.user.is_authenticated:
+        return redirect("accounts:login")
+
+    clinic = getattr(request.user, "clinic", None)
+    if not clinic:
+        return redirect("dashboard:home")
+
+    subscription, created = Subscription.objects.get_or_create(clinic=clinic)
+
+    plan_info = {
+        "starter": {
+            "name": "Starter",
+            "price": 10,
+            "features": ["Up to 100 patients", "Basic billing"],
+        },
+        "pro": {
+            "name": "Pro",
+            "price": 25,
+            "features": ["Up to 500 patients", "Advanced billing", "Priority support"],
+        },
+        "enterprise": {
+            "name": "Enterprise",
+            "price": 50,
+            "features": ["Unlimited patients", "All features", "Dedicated support"],
+        },
+    }
+
+    return render(
+        request,
+        "billing/subscription.html",
+        {
+            "subscription": subscription,
+            "plan_info": plan_info,
+        },
+    )
+
+
+def cancel_subscription(request):
+    if not request.user.is_authenticated:
+        return redirect("accounts:login")
+
+    clinic = getattr(request.user, "clinic", None)
+    if clinic:
+        try:
+            sub = Subscription.objects.get(clinic=clinic)
+            sub.status = Subscription.Status.CANCELED
+            sub.save()
+            messages.success(request, "Subscription canceled successfully.")
+        except Subscription.DoesNotExist:
+            messages.error(request, "No subscription found.")
+
+    return redirect("billing:subscription")

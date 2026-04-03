@@ -27,4 +27,14 @@ urlpatterns = [
         name="payment_create",
     ),
     path("payments/", views.PaymentListView.as_view(), name="payment_list"),
+    # Stripe
+    path(
+        "create-checkout-session/",
+        views.create_checkout_session,
+        name="create_checkout",
+    ),
+    path("webhook/", views.stripe_webhook, name="stripe_webhook"),
+    # Subscription
+    path("subscription/", views.subscription_view, name="subscription"),
+    path("subscription/cancel/", views.cancel_subscription, name="cancel_subscription"),
 ]

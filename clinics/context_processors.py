@@ -1,8 +1,11 @@
 def subscription_context(request):
+    from django.conf import settings
+
+    context = {}
     if request.user.is_authenticated:
         clinic = getattr(request.user, "clinic", None)
         if clinic and hasattr(clinic, "subscription"):
-            return {
+            context = {
                 "user_subscription": clinic.subscription,
                 "user_plan": clinic.subscription.plan,
                 "plan_features": {
@@ -12,4 +15,5 @@ def subscription_context(request):
                     "patient_limit": clinic.subscription.patient_limit,
                 },
             }
-    return {}
+    context["STRIPE_PUBLIC_KEY"] = getattr(settings, "STRIPE_PUBLIC_KEY", "")
+    return context

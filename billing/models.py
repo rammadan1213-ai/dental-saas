@@ -47,6 +47,8 @@ class Invoice(models.Model):
         max_length=20, choices=Status.choices, default=Status.DRAFT
     )
     notes = models.TextField(blank=True)
+    stripe_payment_intent = models.CharField(max_length=255, blank=True)
+    stripe_invoice_id = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
