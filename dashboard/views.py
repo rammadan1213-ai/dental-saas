@@ -309,3 +309,50 @@ def get_dashboard_stats(request):
     }
 
     return JsonResponse(stats)
+
+
+def smart_insights(request):
+    clinic = getattr(request.user, "clinic", None)
+
+    if not clinic:
+        return render(request, "dashboard/insights.html", {})
+
+    top_treatments = (
+        Treatment.objects.filter(clinic=clinic)
+        .values("dental_service__name", "procedure")
+        .annotate(total_count=Count("id"))
+        .annotate(total_revenue=Sum("cost"))
+        .order_by("-total_count")[:5]
+    )
+
+    revenue = (
+        Invoice.objects.filter(clinic=clinic, status="paid").aggregate(
+            total=Sum("total_amount")
+        )["total"]
+        or 0
+    )
+
+    completed_treatments = Treatment.objects.filter(
+        clinic=clinic, status="completed"
+    ).count()
+
+    total_appointments = Appointment.objects.filter(clinic=clinic).count()
+    completed_appointments = Appointment.objects.filter(
+        clinic=clinic, status="completed"
+    ).count()
+
+    context = {
+        "top_treatments": top_treatments,
+        "revenue": revenue,
+        "completed_treatments": completed_treatments,
+        "total_appointments": total_appointments,
+        "completed_appointments": completed_appointments,
+        "completion_rate": round(
+            (completed_appointments / total_appointments * 100)
+            if total_appointments > 0
+            else 0,
+            1,
+        ),
+    }
+
+    return render(request, "dashboard/insights.html", context)

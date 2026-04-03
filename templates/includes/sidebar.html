@@ -297,6 +297,13 @@
                 Reports
             </a>
         </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'insights' in request.path %}active{% endif %}" href="{% url 'dashboard:insights' %}">
+                <i class="bi bi-lightbulb"></i>
+                Insights
+            </a>
+        </li>
         {% endif %}
     </ul>
     

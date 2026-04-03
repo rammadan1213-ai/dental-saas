@@ -36,6 +36,10 @@ class Subscription(models.Model):
     start_date = models.DateField(auto_now_add=True)
     expiry_date = models.DateField()
     stripe_customer_id = models.CharField(max_length=100, blank=True)
+
+    trial_end = models.DateTimeField(null=True, blank=True)
+    is_on_trial = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -50,6 +54,14 @@ class Subscription(models.Model):
         from datetime import date
 
         return self.expiry_date < date.today()
+
+    def is_trial_active(self):
+        from django.utils import timezone
+        from datetime import date
+
+        if not self.trial_end:
+            return False
+        return self.trial_end >= date.today()
 
     def can_access_billing(self):
         return self.plan in ["pro", "enterprise"]
