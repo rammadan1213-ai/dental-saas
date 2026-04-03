@@ -50,12 +50,9 @@
                             {{ form.patient|as_crispy_field }}
                         </div>
                         <div class="col-md-4">
-                            {{ form.treatment|as_crispy_field }}
-                        </div>
-                        <div class="col-md-4">
                             <label class="form-label">Dental Service</label>
                             <select id="dentalServiceSelect" class="form-select" onchange="loadDentalService()">
-                                <option value="">Select a service (optional)</option>
+                                <option value="">Select a service</option>
                                 {% for service in dental_services %}
                                 <option value="{{ service.id }}" data-price="{{ service.default_price }}" data-name="{{ service.name }}">
                                     {{ service.name }} - ${{ service.default_price }}
@@ -63,17 +60,17 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            {{ form.status|as_crispy_field }}
+                        </div>
                     </div>
                     
                     <div class="row mb-4">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             {{ form.issue_date|as_crispy_field }}
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             {{ form.due_date|as_crispy_field }}
-                        </div>
-                        <div class="col-md-3">
-                            {{ form.status|as_crispy_field }}
                         </div>
                     </div>
                     
