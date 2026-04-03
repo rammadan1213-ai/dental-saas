@@ -184,6 +184,33 @@ class UserProfileView(LoginRequiredMixin, DetailView):
         return self.request.user
 
 
+class ChangePasswordView(LoginRequiredMixin, View):
+    template_name = "accounts/change_password.html"
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        password1 = request.POST.get("password1")
+        password2 = request.POST.get("password2")
+
+        if password1 != password2:
+            messages.error(request, "Passwords don't match.")
+            return render(request, self.template_name)
+
+        if len(password1) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+            return render(request, self.template_name)
+
+        user = request.user
+        user.set_password(password1)
+        user.save()
+        login(request, user)
+
+        messages.success(request, "Password changed successfully!")
+        return redirect("accounts:profile")
+
+
 class CustomPasswordResetView(PasswordResetView):
     template_name = "accounts/password_reset.html"
     email_template_name = "accounts/password_reset_email.html"

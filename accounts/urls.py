@@ -18,6 +18,11 @@ urlpatterns = [
     ),
     path("profile/", views.UserProfileView.as_view(), name="profile"),
     path(
+        "change-password/",
+        views.ChangePasswordView.as_view(),
+        name="change_password",
+    ),
+    path(
         "clinic/settings/", views.ClinicSettingsView.as_view(), name="clinic_settings"
     ),
     path(
