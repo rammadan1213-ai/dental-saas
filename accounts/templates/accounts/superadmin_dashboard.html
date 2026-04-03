@@ -195,6 +195,50 @@
         </div>
     </div>
 
+    <!-- Search & Billing Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="globalSearch" class="form-control" placeholder="Search clinics, patients, invoices...">
+                        <button class="btn btn-primary" onclick="performSearch()">Search</button>
+                    </div>
+                    <div id="searchResults" class="mt-3" style="display: none;">
+                        <div class="list-group"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="{% url 'billing:invoice_list' %}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-receipt fs-3 text-success"></i>
+                                <h6 class="mt-2">All Invoices</h6>
+                                <small class="text-muted">View clinic invoices</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'billing:payment_list' %}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-cash-stack fs-3 text-warning"></i>
+                                <h6 class="mt-2">All Payments</h6>
+                                <small class="text-muted">View payments</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
@@ -551,6 +595,50 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function performSearch() {
+    const query = document.getElementById('globalSearch').value;
+    if (!query) return;
+    
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
+    
+    fetch(`/api/search/?q=${encodeURIComponent(query)}`, {
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    .then(response => response.json())
+    .then(data => {
+        let html = '';
+        if (data.clinics && data.clinics.length) {
+            html += '<div class="mb-2"><strong>Clinics:</strong></div>';
+            data.clinics.forEach(c => {
+                html += `<a href="/accounts/clinic/${c.id}/" class="list-group-item list-group-item-action">${c.name}</a>`;
+            });
+        }
+        if (data.patients && data.patients.length) {
+            html += '<div class="mb-2"><strong>Patients:</strong></div>';
+            data.patients.forEach(p => {
+                html += `<a href="/patients/${p.id}/" class="list-group-item list-group-item-action">${p.full_name}</a>`;
+            });
+        }
+        if (data.invoices && data.invoices.length) {
+            html += '<div class="mb-2"><strong>Invoices:</strong></div>';
+            data.invoices.forEach(i => {
+                html += `<a href="/billing/invoices/${i.id}/" class="list-group-item list-group-item-action">${i.invoice_number}</a>`;
+            });
+        }
+        if (!html) html = '<div class="text-center text-muted">No results found</div>';
+        resultsDiv.innerHTML = html;
+    })
+    .catch(() => {
+        resultsDiv.innerHTML = '<div class="text-center text-muted">Search error</div>';
+    });
+}
+
+document.getElementById('globalSearch').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') performSearch();
+});
 </script>
 
 <!-- New Clinic Modal -->

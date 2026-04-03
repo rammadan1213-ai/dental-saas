@@ -238,15 +238,16 @@
             </a>
         </li>
         
+        {% if user.role == 'receptionist' or user.role == 'admin' or user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'billing' in request.path or 'invoice' in request.path %}active{% endif %}" href="{% url 'billing:invoice_list' %}">
                 <i class="bi bi-wallet2"></i>
                 Billing
             </a>
         </li>
-        
         {% endif %}
         
+        {% if user.role == 'admin' or user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if 'billing/subscription' in request.path %}active{% endif %}" href="{% url 'billing:subscription' %}">
                 <i class="bi bi-box-seam"></i>
@@ -260,6 +261,7 @@
                 Payments
             </a>
         </li>
+        {% endif %}
     </ul>
     
     <div class="sidebar-divider"></div>
