@@ -232,10 +232,6 @@ class CustomPasswordResetViewNoEmail(View):
 
         PasswordReset.objects.create(user=user, token=token, expires_at=expires)
 
-        reset_link = request.build_absolute_uri(
-            f"/accounts/password-reset-confirm/{token}/"
-        )
-        messages.success(request, f"Reset link: {reset_link}")
         messages.success(request, "If that email exists, a reset link has been sent.")
         return redirect("accounts:password_reset_done")
 
