@@ -245,7 +245,8 @@
             </a>
         </li>
         
-        {% if not user.is_superuser %}
+        {% endif %}
+        
         <li class="nav-item">
             <a class="nav-link {% if 'billing/subscription' in request.path %}active{% endif %}" href="{% url 'billing:subscription' %}">
                 <i class="bi bi-box-seam"></i>
@@ -259,7 +260,6 @@
                 Payments
             </a>
         </li>
-        {% endif %}
     </ul>
     
     <div class="sidebar-divider"></div>
