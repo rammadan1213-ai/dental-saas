@@ -14,7 +14,7 @@ dj-database-url==2.1.0
 
 # Search
 django-elasticsearch-dsl==8.0
-elasticsearch==8.11.0
+elasticsearch==7.17.0
 
 # Image/ PDF Processing
 Pillow>=10.1.0
