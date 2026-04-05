@@ -25,6 +25,12 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
     from clinics.models import Clinic
     from treatments.models import Treatment
     from appointments.models import Appointment
+    from django.conf import settings
+
+    def get_db_engine():
+        if hasattr(settings, "DATABASE_URL"):
+            return "postgres"
+        return "sqlite"
 
     @api_view(["GET"])
     def global_search(request):
@@ -37,6 +43,7 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
             return Response({})
 
         clinic = getattr(request.user, "clinic", None)
+        db_type = get_db_engine()
 
         results = {
             "patients": [],
@@ -46,23 +53,60 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
             "clinics": [],
         }
 
-        # Patients
+        # Patients - with smart ranking
         if clinic:
-            patients = Patient.objects.filter(clinic=clinic)
+            patients_qs = Patient.objects.filter(clinic=clinic)
         else:
-            patients = Patient.objects.all()
+            patients_qs = Patient.objects.all()
 
-        patients = (
-            patients.filter(
-                Q(first_name__icontains=query)
-                | Q(last_name__icontains=query)
-                | Q(phone__icontains=query)
-                | Q(email__icontains=query)
-                | Q(full_name__icontains=query)
+        if db_type == "postgres":
+            try:
+                from django.contrib.postgres.search import (
+                    SearchVector,
+                    SearchQuery,
+                    SearchRank,
+                    TrigramSimilarity,
+                )
+
+                search_vector = SearchVector(
+                    "first_name", "last_name", "phone", "email", "full_name"
+                )
+                search_query = SearchQuery(query)
+
+                patients = (
+                    patients_qs.annotate(
+                        rank=SearchRank(search_vector, search_query),
+                        similarity=TrigramSimilarity("first_name", query),
+                    )
+                    .filter(Q(rank__gte=0.01) | Q(similarity__gt=0.3))
+                    .order_by("-rank", "-similarity")
+                    .select_related("clinic")
+                    .only("id", "first_name", "last_name", "phone", "full_name")[:10]
+                )
+            except Exception:
+                patients = (
+                    patients_qs.filter(
+                        Q(first_name__icontains=query)
+                        | Q(last_name__icontains=query)
+                        | Q(phone__icontains=query)
+                        | Q(email__icontains=query)
+                        | Q(full_name__icontains=query)
+                    )
+                    .select_related("clinic")
+                    .only("id", "first_name", "last_name", "phone", "full_name")[:10]
+                )
+        else:
+            patients = (
+                patients_qs.filter(
+                    Q(first_name__icontains=query)
+                    | Q(last_name__icontains=query)
+                    | Q(phone__icontains=query)
+                    | Q(email__icontains=query)
+                    | Q(full_name__icontains=query)
+                )
+                .select_related("clinic")
+                .only("id", "first_name", "last_name", "phone", "full_name")[:10]
             )
-            .select_related("clinic")
-            .only("id", "first_name", "last_name", "phone", "full_name")[:5]
-        )
 
         results["patients"] = [
             {
@@ -77,23 +121,62 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
 
         # Treatments
         if clinic:
-            treatments = Treatment.objects.filter(clinic=clinic)
+            treatments_qs = Treatment.objects.filter(clinic=clinic)
         else:
-            treatments = Treatment.objects.all()
+            treatments_qs = Treatment.objects.all()
 
-        treatments = (
-            treatments.filter(
-                Q(procedure__icontains=query) | Q(diagnosis__icontains=query)
+        if db_type == "postgres":
+            try:
+                from django.contrib.postgres.search import (
+                    SearchVector,
+                    SearchQuery,
+                    SearchRank,
+                )
+
+                search_vector = SearchVector("procedure", "diagnosis")
+                search_query = SearchQuery(query)
+
+                treatments = (
+                    treatments_qs.annotate(rank=SearchRank(search_vector, search_query))
+                    .filter(rank__gte=0.01)
+                    .order_by("-rank")
+                    .select_related("patient", "clinic")
+                    .only(
+                        "id",
+                        "procedure",
+                        "diagnosis",
+                        "patient__first_name",
+                        "patient__last_name",
+                    )[:8]
+                )
+            except Exception:
+                treatments = (
+                    treatments_qs.filter(
+                        Q(procedure__icontains=query) | Q(diagnosis__icontains=query)
+                    )
+                    .select_related("patient", "clinic")
+                    .only(
+                        "id",
+                        "procedure",
+                        "diagnosis",
+                        "patient__first_name",
+                        "patient__last_name",
+                    )[:8]
+                )
+        else:
+            treatments = (
+                treatments_qs.filter(
+                    Q(procedure__icontains=query) | Q(diagnosis__icontains=query)
+                )
+                .select_related("patient", "clinic")
+                .only(
+                    "id",
+                    "procedure",
+                    "diagnosis",
+                    "patient__first_name",
+                    "patient__last_name",
+                )[:8]
             )
-            .select_related("patient", "clinic")
-            .only(
-                "id",
-                "procedure",
-                "diagnosis",
-                "patient__first_name",
-                "patient__last_name",
-            )[:5]
-        )
 
         results["treatments"] = [
             {
@@ -106,26 +189,73 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
 
         # Invoices
         if clinic:
-            invoices = Invoice.objects.filter(clinic=clinic)
+            invoices_qs = Invoice.objects.filter(clinic=clinic)
         else:
-            invoices = Invoice.objects.all()
+            invoices_qs = Invoice.objects.all()
 
-        invoices = (
-            invoices.filter(
-                Q(invoice_number__icontains=query)
-                | Q(patient__first_name__icontains=query)
-                | Q(patient__last_name__icontains=query)
+        if db_type == "postgres":
+            try:
+                from django.contrib.postgres.search import (
+                    SearchVector,
+                    SearchQuery,
+                    SearchRank,
+                )
+
+                search_vector = SearchVector("invoice_number")
+                search_query = SearchQuery(query)
+
+                invoices = (
+                    invoices_qs.annotate(rank=SearchRank(search_vector, search_query))
+                    .filter(
+                        Q(rank__gte=0.01)
+                        | Q(patient__first_name__icontains=query)
+                        | Q(patient__last_name__icontains=query)
+                    )
+                    .order_by("-rank")
+                    .select_related("patient", "clinic")
+                    .only(
+                        "id",
+                        "invoice_number",
+                        "status",
+                        "total_amount",
+                        "patient__first_name",
+                        "patient__last_name",
+                    )[:8]
+                )
+            except Exception:
+                invoices = (
+                    invoices_qs.filter(
+                        Q(invoice_number__icontains=query)
+                        | Q(patient__first_name__icontains=query)
+                        | Q(patient__last_name__icontains=query)
+                    )
+                    .select_related("patient", "clinic")
+                    .only(
+                        "id",
+                        "invoice_number",
+                        "status",
+                        "total_amount",
+                        "patient__first_name",
+                        "patient__last_name",
+                    )[:8]
+                )
+        else:
+            invoices = (
+                invoices_qs.filter(
+                    Q(invoice_number__icontains=query)
+                    | Q(patient__first_name__icontains=query)
+                    | Q(patient__last_name__icontains=query)
+                )
+                .select_related("patient", "clinic")
+                .only(
+                    "id",
+                    "invoice_number",
+                    "status",
+                    "total_amount",
+                    "patient__first_name",
+                    "patient__last_name",
+                )[:8]
             )
-            .select_related("patient", "clinic")
-            .only(
-                "id",
-                "invoice_number",
-                "status",
-                "total_amount",
-                "patient__first_name",
-                "patient__last_name",
-            )[:5]
-        )
 
         results["invoices"] = [
             {
@@ -140,12 +270,12 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
 
         # Appointments
         if clinic:
-            appointments = Appointment.objects.filter(clinic=clinic)
+            appointments_qs = Appointment.objects.filter(clinic=clinic)
         else:
-            appointments = Appointment.objects.all()
+            appointments_qs = Appointment.objects.all()
 
         appointments = (
-            appointments.filter(
+            appointments_qs.filter(
                 Q(patient__first_name__icontains=query)
                 | Q(patient__last_name__icontains=query)
                 | Q(reason__icontains=query)
@@ -158,7 +288,7 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
                 "reason",
                 "patient__first_name",
                 "patient__last_name",
-            )[:5]
+            )[:8]
         )
 
         results["appointments"] = [
