@@ -79,6 +79,105 @@
     outline: none;
 }
 
+.search-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    width: 360px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    max-height: 450px;
+    overflow-y: auto;
+    z-index: 1050;
+    display: none;
+}
+
+.search-dropdown.active {
+    display: block;
+}
+
+.search-dropdown-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.search-dropdown-section:last-child {
+    border-bottom: none;
+}
+
+.search-dropdown-section h6 {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.search-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.search-dropdown-item:hover {
+    background: #f5f7fb;
+}
+
+.search-dropdown-item .icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.search-dropdown-item .icon.patient { background: #e0e7ff; color: #4f46e5; }
+.search-dropdown-item .icon.treatment { background: #dcfce7; color: #16a34a; }
+.search-dropdown-item .icon.invoice { background: #fef3c7; color: #d97706; }
+.search-dropdown-item .icon.appointment { background: #fce7f3; color: #db2777; }
+.search-dropdown-item .icon.clinic { background: #e0f2fe; color: #0284c7; }
+
+.search-dropdown-item .details {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-dropdown-item .title {
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-dropdown-item .subtitle {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.search-dropdown-loading {
+    padding: 24px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.search-dropdown-empty {
+    padding: 24px;
+    text-align: center;
+    color: #9ca3af;
+}
+
 .user-dropdown .dropdown-toggle {
     display: flex;
     align-items: center;
@@ -228,7 +327,10 @@
         </div>
         
         <div class="navbar-actions">
-            <input type="search" class="search-box" placeholder="Search patients, appointments...">
+            <div style="position: relative;">
+                <input type="search" id="globalSearchInput" class="search-box" placeholder="Search patients, appointments...">
+                <div id="globalSearchResults" class="search-dropdown"></div>
+            </div>
             
             <button class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode">
                 <i class="bi bi-moon-fill"></i>
@@ -290,12 +392,155 @@ document.getElementById('sidebarToggle')?.addEventListener('click', function() {
     document.querySelector('.sidebar').classList.toggle('active');
 });
 
-document.querySelector('.search-box')?.addEventListener('keyup', function(e) {
-    if (e.key === 'Enter') {
-        const query = this.value.trim();
-        if (query.length >= 2) {
-            window.location.href = `/patients/?search=${encodeURIComponent(query)}`;
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
         }
     }
-});
+    return cookieValue;
+}
+
+let globalSearchTimeout = null;
+const globalSearchInput = document.getElementById('globalSearchInput');
+const globalSearchResults = document.getElementById('globalSearchResults');
+
+if (globalSearchInput) {
+    globalSearchInput.addEventListener('input', function(e) {
+        clearTimeout(globalSearchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            globalSearchResults.classList.remove('active');
+            globalSearchResults.innerHTML = '';
+            return;
+        }
+        
+        globalSearchTimeout = setTimeout(() => {
+            globalSearchResults.innerHTML = '<div class="search-dropdown-loading"><div class="spinner-border spinner-border-sm me-2"></div>Searching...</div>';
+            globalSearchResults.classList.add('active');
+            
+            fetch(`/api/search/?q=${encodeURIComponent(query)}`, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    globalSearchResults.innerHTML = '<div class="search-dropdown-empty">Please log in to search</div>';
+                    return;
+                }
+                
+                let html = '';
+                let hasResults = false;
+                
+                // Patients
+                if (data.patients && data.patients.length) {
+                    hasResults = true;
+                    html += `<div class="search-dropdown-section">
+                        <h6><i class="bi bi-people me-1"></i>Patients</h6>`;
+                    data.patients.forEach(p => {
+                        html += `<a href="/patients/${p.id}/" class="search-dropdown-item">
+                            <div class="icon patient"><i class="bi bi-person"></i></div>
+                            <div class="details">
+                                <div class="title">${p.full_name}</div>
+                                <div class="subtitle">${p.phone || 'No phone'}</div>
+                            </div>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+                
+                // Treatments
+                if (data.treatments && data.treatments.length) {
+                    hasResults = true;
+                    html += `<div class="search-dropdown-section">
+                        <h6><i class="bi bi-activity me-1"></i>Treatments</h6>`;
+                    data.treatments.forEach(t => {
+                        html += `<a href="/treatments/${t.id}/" class="search-dropdown-item">
+                            <div class="icon treatment"><i class="bi bi-clipboard-pulse"></i></div>
+                            <div class="details">
+                                <div class="title">${t.procedure}</div>
+                                <div class="subtitle">${t.patient_name || ''}</div>
+                            </div>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+                
+                // Invoices
+                if (data.invoices && data.invoices.length) {
+                    hasResults = true;
+                    html += `<div class="search-dropdown-section">
+                        <h6><i class="bi bi-receipt me-1"></i>Invoices</h6>`;
+                    data.invoices.forEach(i => {
+                        html += `<a href="/billing/invoices/${i.id}/" class="search-dropdown-item">
+                            <div class="icon invoice"><i class="bi bi-file-text"></i></div>
+                            <div class="details">
+                                <div class="title">${i.invoice_number}</div>
+                                <div class="subtitle">$${i.amount} - ${i.status}</div>
+                            </div>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+                
+                // Appointments
+                if (data.appointments && data.appointments.length) {
+                    hasResults = true;
+                    html += `<div class="search-dropdown-section">
+                        <h6><i class="bi bi-calendar-check me-1"></i>Appointments</h6>`;
+                    data.appointments.forEach(a => {
+                        html += `<a href="/appointments/${a.id}/" class="search-dropdown-item">
+                            <div class="icon appointment"><i class="bi bi-calendar"></i></div>
+                            <div class="details">
+                                <div class="title">${a.reason || 'Appointment'}</div>
+                                <div class="subtitle">${a.date} - ${a.status}</div>
+                            </div>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+                
+                // Clinics (superuser)
+                if (data.clinics && data.clinics.length) {
+                    hasResults = true;
+                    html += `<div class="search-dropdown-section">
+                        <h6><i class="bi bi-hospital me-1"></i>Clinics</h6>`;
+                    data.clinics.forEach(c => {
+                        html += `<a href="/accounts/clinic/${c.id}/" class="search-dropdown-item">
+                            <div class="icon clinic"><i class="bi bi-building"></i></div>
+                            <div class="details">
+                                <div class="title">${c.name}</div>
+                                <div class="subtitle">${c.email || ''}</div>
+                            </div>
+                        </a>`;
+                    });
+                    html += '</div>';
+                }
+                
+                if (!hasResults) {
+                    html = '<div class="search-dropdown-empty">No results found</div>';
+                }
+                
+                globalSearchResults.innerHTML = html;
+            })
+            .catch(() => {
+                globalSearchResults.innerHTML = '<div class="search-dropdown-empty">Search error</div>';
+            });
+        }, 300);
+    });
+    
+    // Close on click outside
+    document.addEventListener('click', function(e) {
+        if (!globalSearchInput.contains(e.target) && !globalSearchResults.contains(e.target)) {
+            globalSearchResults.classList.remove('active');
+        }
+    });
+}
 </script>
