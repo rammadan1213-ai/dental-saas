@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Details{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'accounts:user_list' %}">Users</a></li>
+            <li class="breadcrumb-item active">User Details</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-person me-2"></i>User Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Username:</strong> {{ user_obj.username }}</p>
+                    <p><strong>Full Name:</strong> {{ user_obj.get_full_name|default:"N/A" }}</p>
+                    <p><strong>Email:</strong> {{ user_obj.email }}</p>
+                    <p><strong>Role:</strong> {{ user_obj.get_role_display }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Clinic:</strong> {{ user_obj.clinic.name|default:"No Clinic" }}</p>
+                    <p><strong>Status:</strong> 
+                        {% if user_obj.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Last Login:</strong> {{ user_obj.last_login|default:"Never" }}</p>
+                    <p><strong>Joined:</strong> {{ user_obj.date_joined }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'accounts:user_update' user_obj.pk %}" class="btn btn-primary">
+                <i class="bi bi-pencil me-1"></i>Edit User
+            </a>
+            <a href="{% url 'accounts:user_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to List
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

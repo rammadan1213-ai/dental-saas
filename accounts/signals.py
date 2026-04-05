@@ -27,5 +27,27 @@ def notify_superadmin_on_login(sender, request, user, **kwargs):
             title=f"User Login: {user.username}",
             message=message,
             notification_type="info",
+            link=f"/accounts/users/{user.id}/",
+        )
+    message = f"{user.get_full_name or user.username} logged into {clinic_name}"
+
+    for admin in superadmins:
+        Notification.objects.create(
+            user=admin,
+            title=f"User Login: {user.username}",
+            message=message,
+            notification_type="info",
+            link=f"/accounts/admin/clinic/{user.clinic.id}/"
+            if user.clinic
+            else "/accounts/admin/dashboard/",
+        )
+    message = f"{user.get_full_name or user.username} logged into {clinic_name}"
+
+    for admin in superadmins:
+        Notification.objects.create(
+            user=admin,
+            title=f"User Login: {user.username}",
+            message=message,
+            notification_type="info",
             link=f"/accounts/user/{user.id}/",
         )

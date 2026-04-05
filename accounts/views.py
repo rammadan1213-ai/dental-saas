@@ -141,6 +141,18 @@ class UserCreateView(AdminRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
+class UserDetailView(AdminRequiredMixin, DetailView):
+    model = User
+    template_name = "accounts/user_detail.html"
+    context_object_name = "user_obj"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_superuser:
+            return queryset.select_related("clinic")
+        return queryset.filter(clinic=self.request.user.clinic)
+
+
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
     form_class = CustomUserChangeForm
