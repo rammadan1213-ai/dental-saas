@@ -427,11 +427,7 @@ if (globalSearchInput) {
             globalSearchResults.classList.add('active');
             
             fetch(`/api/search/?q=${encodeURIComponent(query)}`, {
-                credentials: 'same-origin',
-                headers: { 
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Accept': 'application/json',
-                }
+                credentials: 'same-origin'
             })
             .then(res => {
                 console.log('Status:', res.status);
@@ -440,7 +436,7 @@ if (globalSearchInput) {
             .then(data => {
                 console.log('Search response:', data);
                 if (data.error) {
-                    globalSearchResults.innerHTML = '<div class="search-dropdown-empty">Please log in to search</div>';
+                    globalSearchResults.innerHTML = '<div class="search-dropdown-empty">Error: ' + data.error + '</div>';
                     return;
                 }
                 

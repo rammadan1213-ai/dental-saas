@@ -25,6 +25,7 @@ from clinics.models import Clinic
 from treatments.models import Treatment
 from appointments.models import Appointment
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +34,6 @@ logger = logging.getLogger(__name__)
 def global_search(request):
     try:
         query = request.GET.get("q", "")
-
-        # For demo, allow anonymous search (remove auth check for now)
-        # if not request.user.is_authenticated:
-        #     return Response({"error": "Please log in to search"}, status=401)
 
         if len(query) < 2:
             return Response({})
@@ -48,6 +45,8 @@ def global_search(request):
         else:
             clinic = None
             user = None
+
+        logger.info(f"Search: query={query}, clinic={clinic}, user={user}")
 
         results = {
             "patients": [],
@@ -195,10 +194,8 @@ def global_search(request):
         return Response(results)
     except Exception as e:
         logger.error(f"Search error: {e}")
-        import traceback
-
         logger.error(traceback.format_exc())
-        return Response({"error": str(e)}, status=500)
+        return Response({"error": f"Server error: {str(e)}"}, status=500)
 
 
 urlpatterns.append(path("api/search/", global_search, name="global_search"))
