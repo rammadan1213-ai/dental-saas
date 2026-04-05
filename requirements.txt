@@ -12,9 +12,7 @@ django-widget-tweaks==1.5.0
 psycopg2-binary==2.9.9
 dj-database-url==2.1.0
 
-# Search
-django-elasticsearch-dsl==8.0
-elasticsearch==7.17.0
+# Search - using PostgreSQL full-text search (no extra packages needed)
 
 # Image/ PDF Processing
 Pillow>=10.1.0

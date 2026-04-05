@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "widget_tweaks",
-    "django_elasticsearch_dsl",
     "accounts",
     "patients",
     "appointments",
@@ -102,10 +101,10 @@ else:
         }
     }
 
-# Elasticsearch Configuration
-ELASTICSEARCH_DSL = {
-    "default": {"hosts": os.environ.get("ELASTICSEARCH_HOST", "localhost:9200")},
-}
+# Elasticsearch Configuration (disabled - using PostgreSQL full-text search)
+# ELASTICSEARCH_DSL = {
+#     "default": {"hosts": os.environ.get("ELASTICSEARCH_HOST", "localhost:9200")},
+# }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
