@@ -289,4 +289,13 @@
 document.getElementById('sidebarToggle')?.addEventListener('click', function() {
     document.querySelector('.sidebar').classList.toggle('active');
 });
+
+document.querySelector('.search-box')?.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+        const query = this.value.trim();
+        if (query.length >= 2) {
+            window.location.href = `/patients/?search=${encodeURIComponent(query)}`;
+        }
+    }
+});
 </script>
