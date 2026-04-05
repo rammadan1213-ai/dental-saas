@@ -202,6 +202,8 @@ STRIPE_WEBHOOK_SECRET = os.environ.get(
     "STRIPE_WEBHOOK_SECRET", "whsec_your_webhook_secret_here"
 )
 
+SEARCH_ENABLED = True
+
 # SaaS Configuration
 FREE_TRIAL_DAYS = 14
 
