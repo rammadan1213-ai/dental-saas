@@ -550,6 +550,23 @@ def stripe_webhook(request):
         except Exception:
             pass
 
+    elif event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        invoice_id = session.get("metadata", {}).get("invoice_id")
+
+        if invoice_id:
+            try:
+                invoice = Invoice.objects.get(id=invoice_id)
+                invoice.status = Invoice.Status.PAID
+                invoice.amount_paid = invoice.total_amount
+                invoice.remaining_amount = 0
+                invoice.stripe_payment_intent = session.get(
+                    "payment_intent"
+                ) or session.get("id")
+                invoice.save()
+            except Invoice.DoesNotExist:
+                pass
+
     return HttpResponse(status=200)
 
 
@@ -609,6 +626,51 @@ def cancel_subscription(request):
             messages.error(request, "No subscription found.")
 
     return redirect("billing:subscription")
+
+
+def create_invoice_checkout(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    clinic = getattr(request.user, "clinic", None)
+
+    if clinic and invoice.clinic != clinic:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    remaining = invoice.balance_due
+    if remaining <= 0:
+        return JsonResponse({"error": "Invoice already paid"}, status=400)
+
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": f"Invoice {invoice.invoice_number}",
+                        "description": f"Payment for {invoice.patient.full_name}",
+                    },
+                    "unit_amount": int(remaining * 100),
+                },
+                "quantity": 1,
+            }
+        ],
+        mode="payment",
+        success_url=request.build_absolute_uri(
+            f"/billing/invoices/{invoice.id}/?payment=success"
+        ),
+        cancel_url=request.build_absolute_uri(
+            f"/billing/invoices/{invoice.id}/?payment=cancel"
+        ),
+        metadata={
+            "invoice_id": invoice.id,
+            "invoice_number": invoice.invoice_number,
+        },
+    )
+
+    invoice.stripe_payment_intent = session.id
+    invoice.save(update_fields=["stripe_payment_intent"])
+
+    return JsonResponse({"url": session.url})
 
 
 def create_invoice_from_treatment(request, patient_id, treatment_id):

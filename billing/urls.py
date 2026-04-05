@@ -43,4 +43,9 @@ urlpatterns = [
         views.create_invoice_from_treatment,
         name="create_invoice_from_treatment",
     ),
+    path(
+        "invoices/<int:invoice_id>/checkout/",
+        views.create_invoice_checkout,
+        name="invoice_checkout",
+    ),
 ]

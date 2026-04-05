@@ -84,6 +84,13 @@ class Treatment(models.Model):
     cost = models.DecimalField(max_digits=10, decimal_places=2)
     notes = models.TextField(blank=True)
     treatment_date = models.DateField()
+    invoice = models.ForeignKey(
+        "billing.Invoice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="treatments",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -96,6 +103,33 @@ class Treatment(models.Model):
         return f"{self.patient.full_name} - {self.procedure[:50]}"
 
     def save(self, *args, **kwargs):
+        from django.utils import timezone
+
+        is_new = self.pk is None
         if self.dental_service and not self.cost:
             self.cost = self.dental_service.default_price
         super().save(*args, **kwargs)
+
+        if is_new and self.clinic and self.patient and self.cost:
+            from billing.models import Invoice, InvoiceItem
+
+            invoice = Invoice.objects.create(
+                clinic=self.clinic,
+                patient=self.patient,
+                issue_date=timezone.now().date(),
+                due_date=timezone.now().date() + timezone.timedelta(days=30),
+                total_amount=self.cost,
+                amount_paid=0,
+                remaining_amount=self.cost,
+                status=Invoice.Status.SENT,
+            )
+            InvoiceItem.objects.create(
+                invoice=invoice,
+                treatment=self,
+                description=self.procedure,
+                quantity=1,
+                unit_price=self.cost,
+                total_price=self.cost,
+            )
+            self.invoice = invoice
+            super().save(update_fields=["invoice"])
