@@ -451,6 +451,13 @@ class SuperAdminDashboardView(LoginRequiredMixin, TemplateView):
         context["clinics"] = Clinic.objects.all().select_related("subscription")[:50]
         context["recent_signups"] = Clinic.objects.order_by("-created_at")[:10]
 
+        # Recent user logins
+        context["recent_logins"] = (
+            User.objects.select_related("clinic").order_by("-last_login")[:20]
+            if User.objects.exists()
+            else []
+        )
+
         return context
 
 
