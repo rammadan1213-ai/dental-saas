@@ -598,7 +598,10 @@ function getCookie(name) {
 
 function performSearch() {
     const query = document.getElementById('globalSearch').value;
-    if (!query) return;
+    if (!query || query.length < 2) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
     
     const resultsDiv = document.getElementById('searchResults');
     resultsDiv.style.display = 'block';
@@ -628,16 +631,18 @@ function performSearch() {
                 html += `<a href="/billing/invoices/${i.id}/" class="list-group-item list-group-item-action">${i.invoice_number}</a>`;
             });
         }
-        if (!html) html = '<div class="text-center text-muted">No results found</div>';
+        if (!html) html = '<div class="text-center text-muted p-3">No results found</div>';
         resultsDiv.innerHTML = html;
     })
     .catch(() => {
-        resultsDiv.innerHTML = '<div class="text-center text-muted">Search error</div>';
+        resultsDiv.innerHTML = '<div class="text-center text-muted p-3">Search error</div>';
     });
 }
 
-document.getElementById('globalSearch').addEventListener('keyup', function(e) {
-    if (e.key === 'Enter') performSearch();
+let searchTimeout = null;
+document.getElementById('globalSearch').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(performSearch, 300);
 });
 </script>
 

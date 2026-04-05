@@ -11,6 +11,7 @@ from django.contrib import messages
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
+from django.core.paginator import Paginator
 from .models import Patient, PatientDocument
 from .forms import PatientForm, PatientDocumentForm, PatientSearchForm
 from notifications.views import notify_new_patient
@@ -172,23 +173,74 @@ class PatientDocumentUploadView(LoginRequiredMixin, StaffRequiredMixin, CreateVi
 
 
 def get_patients_json(request):
-    search = request.GET.get("search", "")
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    search = request.GET.get("q", request.GET.get("search", ""))
+    status = request.GET.get("status")
+    gender = request.GET.get("gender")
+    page = request.GET.get("page", 1)
+    limit = min(int(request.GET.get("limit", 20)), 50)
+
     clinic = getattr(request.user, "clinic", None)
-    base_filter = Q(is_active=True)
-    if clinic:
-        base_filter &= Q(clinic=clinic)
-    patients = Patient.objects.filter(
-        base_filter
-        & (
+
+    if request.user.is_superuser:
+        patients = Patient.objects.all()
+    elif clinic:
+        patients = Patient.objects.filter(clinic=clinic)
+    else:
+        return JsonResponse({"error": "No clinic found"}, status=400)
+
+    if search:
+        patients = patients.filter(
             Q(first_name__icontains=search)
             | Q(last_name__icontains=search)
             | Q(phone__icontains=search)
+            | Q(email__icontains=search)
+            | Q(full_name__icontains=search)
         )
-    )[:10]
+
+    if status:
+        patients = patients.filter(is_active=(status == "active"))
+
+    if gender:
+        patients = patients.filter(gender=gender)
+
+    patients = patients.select_related("clinic").only(
+        "id",
+        "first_name",
+        "last_name",
+        "phone",
+        "email",
+        "gender",
+        "is_active",
+        "date_of_birth",
+    )
+
+    paginator = Paginator(patients, limit)
+    patients_page = paginator.get_page(page)
 
     data = [
-        {"id": p.id, "full_name": p.full_name, "phone": p.phone, "email": p.email}
-        for p in patients
+        {
+            "id": p.id,
+            "full_name": p.full_name,
+            "first_name": p.first_name,
+            "last_name": p.last_name,
+            "phone": p.phone,
+            "email": p.email,
+            "gender": p.gender,
+            "is_active": p.is_active,
+            "age": p.age,
+        }
+        for p in patients_page
     ]
 
-    return JsonResponse(data, safe=False)
+    return JsonResponse(
+        {
+            "results": data,
+            "count": paginator.count,
+            "pages": paginator.num_pages,
+            "current_page": int(page),
+        },
+        safe=False,
+    )

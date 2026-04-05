@@ -15,4 +15,5 @@ urlpatterns = [
         name="document_upload",
     ),
     path("api/search/", views.get_patients_json, name="patient_search_api"),
+    path("api/search/", views.get_patients_json, name="patient_search"),
 ]
