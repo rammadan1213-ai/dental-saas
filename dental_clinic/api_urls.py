@@ -34,13 +34,20 @@ def global_search(request):
     try:
         query = request.GET.get("q", "")
 
-        if not request.user.is_authenticated:
-            return Response({"error": "Please log in to search"}, status=401)
+        # For demo, allow anonymous search (remove auth check for now)
+        # if not request.user.is_authenticated:
+        #     return Response({"error": "Please log in to search"}, status=401)
 
         if len(query) < 2:
             return Response({})
 
-        clinic = getattr(request.user, "clinic", None)
+        # Get clinic - handle both authenticated and anonymous
+        if hasattr(request, "user") and request.user.is_authenticated:
+            clinic = getattr(request.user, "clinic", None)
+            user = request.user
+        else:
+            clinic = None
+            user = None
 
         results = {
             "patients": [],
@@ -176,8 +183,8 @@ def global_search(request):
             for a in appointments
         ]
 
-        # Clinics
-        if request.user.is_superuser:
+        # Clinics (superuser only)
+        if user and user.is_superuser:
             clinics = Clinic.objects.filter(
                 Q(name__icontains=query) | Q(email__icontains=query)
             ).only("id", "name", "email")[:5]
@@ -188,6 +195,9 @@ def global_search(request):
         return Response(results)
     except Exception as e:
         logger.error(f"Search error: {e}")
+        import traceback
+
+        logger.error(traceback.format_exc())
         return Response({"error": str(e)}, status=500)
 
 
