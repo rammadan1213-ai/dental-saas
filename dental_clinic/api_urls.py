@@ -317,21 +317,6 @@ if hasattr(settings, "SEARCH_ENABLED") and settings.SEARCH_ENABLED:
                 {"id": c.id, "name": c.name, "email": c.email} for c in clinics
             ]
 
-        # Log search
-        try:
-            from search.models import SearchLog
-
-            SearchLog.objects.create(
-                query=query,
-                user=request.user,
-                clinic=clinic,
-                results_count=len(results.get("patients", []))
-                + len(results.get("treatments", []))
-                + len(results.get("invoices", [])),
-            )
-        except Exception:
-            pass
-
         return Response(results)
 
     urlpatterns.append(path("api/search/", global_search, name="global_search"))
