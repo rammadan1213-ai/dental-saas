@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 
 class Clinic(models.Model):
@@ -28,6 +30,8 @@ class Subscription(models.Model):
         ("enterprise", "Enterprise - $50/month"),
     ]
 
+    TRIAL_DAYS = 3  # 3 days trial
+
     clinic = models.OneToOneField(
         Clinic, on_delete=models.CASCADE, related_name="subscription"
     )
@@ -39,6 +43,7 @@ class Subscription(models.Model):
 
     trial_end = models.DateTimeField(null=True, blank=True)
     is_on_trial = models.BooleanField(default=False)
+    is_trial_expired = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -49,6 +54,21 @@ class Subscription(models.Model):
     def __str__(self):
         return f"{self.clinic.name} - {self.get_plan_display()}"
 
+    def start_trial(self):
+        """Start a 3-day trial period"""
+        self.is_on_trial = True
+        self.trial_end = timezone.now() + timedelta(days=self.TRIAL_DAYS)
+        self.is_active = True
+        self.save()
+
+    @property
+    def days_remaining(self):
+        """Get remaining trial days"""
+        if not self.is_on_trial or not self.trial_end:
+            return 0
+        remaining = self.trial_end - timezone.now()
+        return max(0, remaining.days)
+
     @property
     def is_expired(self):
         from datetime import date
@@ -56,24 +76,43 @@ class Subscription(models.Model):
         return self.expiry_date < date.today()
 
     def is_trial_active(self):
-        from django.utils import timezone
-        from datetime import date
-
+        if not self.is_on_trial:
+            return False
         if not self.trial_end:
             return False
-        return self.trial_end >= date.today()
+        if self.is_trial_expired:
+            return False
+        return self.trial_end >= timezone.now()
+
+    def check_trial_expired(self):
+        """Check and update trial expiration status"""
+        if self.is_on_trial and self.trial_end:
+            if timezone.now() > self.trial_end:
+                self.is_trial_expired = True
+                self.is_active = False
+                self.save()
+                return True
+        return False
 
     def can_access_billing(self):
-        return self.plan in ["pro", "enterprise"]
+        if self.is_trial_active():
+            return True  # Trial users can access billing
+        return self.plan in ["pro", "enterprise"] and self.is_active
 
     def can_access_reports(self):
-        return self.plan in ["pro", "enterprise"]
+        if self.is_trial_active():
+            return True  # Trial users can access reports
+        return self.plan in ["pro", "enterprise"] and self.is_active
 
     def can_access_analytics(self):
-        return self.plan == "enterprise"
+        if self.is_trial_active():
+            return True  # Trial users can access analytics
+        return self.plan == "enterprise" and self.is_active
 
     @property
     def patient_limit(self):
+        if self.is_trial_active():
+            return 50  # Limit during trial
         limits = {
             "basic": 500,
             "pro": 10000,
@@ -84,5 +123,6 @@ class Subscription(models.Model):
     def can_add_patient(self):
         from patients.models import Patient
 
+        self.check_trial_expired()
         current_count = Patient.objects.filter(clinic=self.clinic).count()
         return current_count < self.patient_limit

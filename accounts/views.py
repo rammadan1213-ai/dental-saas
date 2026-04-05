@@ -385,12 +385,15 @@ class RegisterView(View):
         user.clinic = clinic
         user.save()
 
-        Subscription.objects.create(
+        subscription = Subscription.objects.create(
             clinic=clinic,
             plan=plan,
             is_active=True,
-            expiry_date=datetime.now().date() + timedelta(days=30),
+            expiry_date=datetime.now().date() + timedelta(days=3),  # 3-day trial
         )
+
+        # Start the trial
+        subscription.start_trial()
 
         user = authenticate(request, username=user.username, password=owner_password)
         if user:
