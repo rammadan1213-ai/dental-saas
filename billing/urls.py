@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import payment_views
 
 app_name = "billing"
 
@@ -47,5 +48,29 @@ urlpatterns = [
         "invoices/<int:invoice_id>/checkout/",
         views.create_invoice_checkout,
         name="invoice_checkout",
+    ),
+    # Payment Request (Manual)
+    path(
+        "payment/request/", payment_views.submit_payment_request, name="payment_request"
+    ),
+    path(
+        "payment/my-requests/",
+        payment_views.my_payment_requests,
+        name="my_payment_requests",
+    ),
+    path(
+        "admin/payments/",
+        payment_views.admin_payment_requests,
+        name="admin_payment_requests",
+    ),
+    path(
+        "admin/payment/<int:request_id>/approve/",
+        payment_views.approve_payment_request,
+        name="approve_payment",
+    ),
+    path(
+        "admin/payment/<int:request_id>/reject/",
+        payment_views.reject_payment_request,
+        name="reject_payment",
     ),
 ]

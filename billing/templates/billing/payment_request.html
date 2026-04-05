@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Subscribe - Payment Request{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-credit-card me-2"></i>Submit Payment Request</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Send us your payment details via Zaad, E-Dahab, or Sahal. 
+                        We'll verify and activate your plan within 24 hours.
+                    </p>
+                    
+                    <h5 class="mt-4">Your Payment Number (WhatsApp):</h5>
+                    <p class="text-success fw-bold">+252 637 708 080</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Select Plan</label>
+                            <select name="plan" class="form-select" id="planSelect" required>
+                                <option value="">Choose a plan...</option>
+                                {% for plan, price in plan_prices.items %}
+                                <option value="{{ plan }}">{{ plan|title }} - ${{ price }}/month</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Your Merchant Number</label>
+                            <input type="text" name="merchant_number" class="form-control" 
+                                   placeholder="e.g., 2526XXXXXXX" required>
+                            <small class="text-muted">The number you sent payment from</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Transaction ID (Optional)</label>
+                            <input type="text" name="transaction_id" class="form-control"
+                                   placeholder="Transaction reference number if available">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea name="notes" class="form-control" rows="2"
+                                      placeholder="Any additional information"></textarea>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>Payment Instructions:</strong>
+                            <ol class="mb-0 mt-2">
+                                <li>Send payment to: <strong>+252 637 708 080</strong></li>
+                                <li>Select plan above and enter your payment number</li>
+                                <li>We'll confirm payment via WhatsApp and activate your account</li>
+                            </ol>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-send me-2"></i>Submit Payment Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
