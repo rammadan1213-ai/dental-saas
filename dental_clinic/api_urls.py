@@ -68,16 +68,15 @@ def global_search(request):
                 | Q(last_name__icontains=query)
                 | Q(phone__icontains=query)
                 | Q(email__icontains=query)
-                | Q(full_name__icontains=query)
             )
             .select_related("clinic")
-            .only("id", "first_name", "last_name", "phone", "full_name")[:10]
+            .only("id", "first_name", "last_name", "phone", "email")[:10]
         )
 
         results["patients"] = [
             {
                 "id": p.id,
-                "full_name": p.full_name,
+                "full_name": p.first_name + " " + p.last_name,
                 "first_name": p.first_name,
                 "last_name": p.last_name,
                 "phone": p.phone,
