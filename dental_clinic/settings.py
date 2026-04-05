@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "widget_tweaks",
+    "django_elasticsearch_dsl",
     "accounts",
     "patients",
     "appointments",
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     "payments",
     "setup",
     "notifications",
+    "search",
 ]
 
 MIDDLEWARE = [
@@ -99,6 +101,11 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+# Elasticsearch Configuration
+ELASTICSEARCH_DSL = {
+    "default": {"hosts": os.environ.get("ELASTICSEARCH_HOST", "localhost:9200")},
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
