@@ -1,0 +1,35 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        run: |
+          python manage.py migrate --noinput
+
+      - name: Collect static files
+        run: |
+          python manage.py collectstatic --noinput
+
+      - name: Deploy to Render
+        uses: render-deploy-action@v1
+        with:
+          render-deploy-token: ${{ secrets.RENDER_DEPLOY_TOKEN }}
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
