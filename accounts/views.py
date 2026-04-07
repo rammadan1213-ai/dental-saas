@@ -184,7 +184,16 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
             queryset = queryset.filter(clinic=self.request.user.clinic)
         return queryset
 
+    def get_object(self, queryset=None):
+        try:
+            return super().get_object(queryset)
+        except Exception as e:
+            messages.error(self.request, f"Error: {str(e)}")
+            return None
+
     def form_valid(self, form):
+        if self.get_object() is None:
+            return redirect("accounts:user_list")
         messages.success(self.request, "User deleted successfully.")
         return super().form_valid(form)
 

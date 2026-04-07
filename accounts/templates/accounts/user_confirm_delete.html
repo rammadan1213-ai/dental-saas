@@ -8,15 +8,21 @@
     <div class="card-body">
         <div class="alert alert-danger">
             <h4 class="alert-heading">Are you sure?</h4>
+            {% if object %}
             <p>Are you sure you want to delete user <strong>{{ object.username }}</strong>?</p>
+            {% else %}
+            <p>User not found or access denied.</p>
+            {% endif %}
             <p class="mb-0">This action cannot be undone.</p>
         </div>
         
         <form method="post">
             {% csrf_token %}
+            {% if object %}
             <button type="submit" class="btn btn-danger">
                 <i class="bi bi-trash"></i> Yes, Delete
             </button>
+            {% endif %}
             <a href="{% url 'accounts:user_list' %}" class="btn btn-secondary">
                 <i class="bi bi-x-circle"></i> Cancel
             </a>
