@@ -55,33 +55,51 @@ class User(AbstractUser):
 
 
 class AuditLog(models.Model):
+    ACTION_TYPES = [
+        ("login", "User Login"),
+        ("logout", "User Logout"),
+        ("create", "Create"),
+        ("update", "Update"),
+        ("delete", "Delete"),
+        ("payment", "Payment"),
+        ("subscription", "Subscription"),
+        ("patient", "Patient"),
+        ("treatment", "Treatment"),
+        ("appointment", "Appointment"),
+        ("invoice", "Invoice"),
+    ]
+
     clinic = models.ForeignKey(
         "clinics.Clinic",
         on_delete=models.CASCADE,
         null=True,
+        blank=True,
         related_name="audit_logs",
     )
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    action = models.CharField(max_length=50)
-    model_name = models.CharField(max_length=100)
-    object_id = models.PositiveIntegerField(null=True)
+    action = models.CharField(max_length=50, choices=ACTION_TYPES)
+    model_name = models.CharField(max_length=100, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     description = models.TextField()
-    ip_address = models.GenericIPAddressField(null=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    clinic = models.ForeignKey(
-        "clinics.Clinic",
-        on_delete=models.CASCADE,
-        null=True,
-        related_name="audit_logs",
-    )
 
     class Meta:
         ordering = ["-timestamp"]
         verbose_name = "Audit Log"
         verbose_name_plural = "Audit Logs"
+        indexes = [
+            models.Index(fields=["-timestamp"]),
+            models.Index(fields=["user", "-timestamp"]),
+            models.Index(fields=["clinic", "-timestamp"]),
+            models.Index(fields=["action", "-timestamp"]),
+        ]
 
     def __str__(self):
-        return f"{self.user} - {self.action} - {self.model_name}"
+        return (
+            f"{self.user} - {self.action} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+        )
 
 
 class PasswordReset(models.Model):
