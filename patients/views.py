@@ -139,7 +139,7 @@ class PatientDeleteView(
         patient.is_active = False
         patient.save()
         messages.success(self.request, "Patient deactivated successfully.")
-        return JsonResponse({"success": True})
+        return super().form_valid(form)
 
 
 class PatientDetailView(
