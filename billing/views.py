@@ -176,9 +176,13 @@ class InvoiceCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
 
         from treatments.models import Treatment, DentalService
 
-        treatments = Treatment.objects.all()
-        if hasattr(self.request.user, "clinic") and self.request.user.clinic:
-            treatments = treatments.filter(clinic=self.request.user.clinic)
+        clinic = getattr(self.request.user, "clinic", None)
+        if clinic:
+            treatments = Treatment.objects.filter(clinic=clinic)
+        else:
+            treatments = Treatment.objects.none()
+        if self.request.user.is_superuser:
+            treatments = Treatment.objects.all()
         context["treatments"] = treatments
 
         context["dental_services"] = DentalService.objects.filter(is_active=True)
@@ -348,9 +352,13 @@ class PaymentListView(
         from django.utils import timezone
 
         clinic = getattr(self.request.user, "clinic", None)
-        invoices = Invoice.objects.all()
-        if clinic:
-            invoices = invoices.filter(clinic=clinic)
+
+        if self.request.user.is_superuser:
+            invoices = Invoice.objects.all()
+        elif clinic:
+            invoices = Invoice.objects.filter(clinic=clinic)
+        else:
+            invoices = Invoice.objects.none()
 
         context["invoices_for_form"] = invoices.select_related("patient", "clinic")
 
