@@ -312,7 +312,7 @@
         
         <a class="navbar-brand-custom" href="{% url 'dashboard:home' %}">
             <i class="bi bi-plus-circle-fill"></i>
-            <span>Dental SaaS</span>
+            <span>{% if user.clinic %}{{ user.clinic.name }}{% else %}Dental SaaS{% endif %}</span>
         </a>
         
         <div class="quick-actions d-none d-lg-flex mx-auto">
