@@ -62,16 +62,12 @@ def global_search(request):
         else:
             patients_qs = Patient.objects.all()
 
-        patients = (
-            patients_qs.filter(
-                Q(first_name__icontains=query)
-                | Q(last_name__icontains=query)
-                | Q(phone__icontains=query)
-                | Q(email__icontains=query)
-            )
-            .select_related("clinic")
-            .only("id", "first_name", "last_name", "phone", "email")[:10]
-        )
+        patients = patients_qs.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(phone__icontains=query)
+            | Q(email__icontains=query)
+        )[:10]
 
         results["patients"] = [
             {
@@ -90,25 +86,17 @@ def global_search(request):
         else:
             treatments_qs = Treatment.objects.all()
 
-        treatments = (
-            treatments_qs.filter(
-                Q(procedure__icontains=query) | Q(diagnosis__icontains=query)
-            )
-            .select_related("patient", "clinic")
-            .only(
-                "id",
-                "procedure",
-                "diagnosis",
-                "patient__first_name",
-                "patient__last_name",
-            )[:8]
-        )
+        treatments = treatments_qs.filter(
+            Q(procedure__icontains=query) | Q(diagnosis__icontains=query)
+        ).select_related("patient")[:8]
 
         results["treatments"] = [
             {
                 "id": t.id,
-                "procedure": t.procedure[:50],
-                "patient_name": t.patient.full_name if t.patient else None,
+                "procedure": t.procedure[:50] if t.procedure else "",
+                "patient_name": t.patient.first_name + " " + t.patient.last_name
+                if t.patient
+                else None,
             }
             for t in treatments
         ]
@@ -119,30 +107,21 @@ def global_search(request):
         else:
             invoices_qs = Invoice.objects.all()
 
-        invoices = (
-            invoices_qs.filter(
-                Q(invoice_number__icontains=query)
-                | Q(patient__first_name__icontains=query)
-                | Q(patient__last_name__icontains=query)
-            )
-            .select_related("patient", "clinic")
-            .only(
-                "id",
-                "invoice_number",
-                "status",
-                "total_amount",
-                "patient__first_name",
-                "patient__last_name",
-            )[:8]
-        )
+        invoices = invoices_qs.filter(
+            Q(invoice_number__icontains=query)
+            | Q(patient__first_name__icontains=query)
+            | Q(patient__last_name__icontains=query)
+        ).select_related("patient")[:8]
 
         results["invoices"] = [
             {
                 "id": i.id,
                 "invoice_number": i.invoice_number,
                 "status": i.status,
-                "amount": str(i.total_amount),
-                "patient_name": i.patient.full_name if i.patient else None,
+                "amount": str(i.total_amount) if i.total_amount else "0",
+                "patient_name": i.patient.first_name + " " + i.patient.last_name
+                if i.patient
+                else None,
             }
             for i in invoices
         ]
@@ -153,30 +132,21 @@ def global_search(request):
         else:
             appointments_qs = Appointment.objects.all()
 
-        appointments = (
-            appointments_qs.filter(
-                Q(patient__first_name__icontains=query)
-                | Q(patient__last_name__icontains=query)
-                | Q(reason__icontains=query)
-            )
-            .select_related("patient", "clinic")
-            .only(
-                "id",
-                "status",
-                "date",
-                "reason",
-                "patient__first_name",
-                "patient__last_name",
-            )[:8]
-        )
+        appointments = appointments_qs.filter(
+            Q(patient__first_name__icontains=query)
+            | Q(patient__last_name__icontains=query)
+            | Q(reason__icontains=query)
+        ).select_related("patient")[:8]
 
         results["appointments"] = [
             {
                 "id": a.id,
                 "status": a.status,
-                "date": str(a.date),
-                "reason": a.reason[:30],
-                "patient_name": a.patient.full_name if a.patient else None,
+                "date": str(a.date) if a.date else "",
+                "reason": a.reason[:30] if a.reason else "",
+                "patient_name": a.patient.first_name + " " + a.patient.last_name
+                if a.patient
+                else None,
             }
             for a in appointments
         ]
