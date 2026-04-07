@@ -339,7 +339,9 @@
             <a href="{% url 'notifications:notification_list' %}" class="nav-icon-btn">
                 <i class="bi bi-bell"></i>
                 {% if unread_notifications_count > 0 %}
-                <span class="badge bg-danger">{{ unread_notifications_count }}</span>
+                <span class="badge bg-danger notification-badge">{{ unread_notifications_count }}</span>
+                {% else %}
+                <span class="badge bg-danger notification-badge" style="display: none;">0</span>
                 {% endif %}
             </a>
             

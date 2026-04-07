@@ -93,7 +93,18 @@ function markRead(id) {
         method: 'POST',
         headers: {'X-CSRFToken': getCookie('csrftoken')}
     })
-    .then(() => location.reload());
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const el = document.getElementById('notification-' + id);
+            if (el) {
+                el.classList.remove('bg-light');
+                el.querySelector('.badge')?.remove();
+                el.querySelector('h6')?.classList.remove('fw-bold');
+            }
+            updateNotificationBadge();
+        }
+    });
 }
 
 function markAllRead() {
@@ -101,7 +112,12 @@ function markAllRead() {
         method: 'POST',
         headers: {'X-CSRFToken': getCookie('csrftoken')}
     })
-    .then(() => location.reload());
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
 }
 
 function deleteNotification(id) {
@@ -110,7 +126,14 @@ function deleteNotification(id) {
             method: 'DELETE',
             headers: {'X-CSRFToken': getCookie('csrftoken')}
         })
-        .then(() => location.reload());
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const el = document.getElementById('notification-' + id);
+                if (el) el.remove();
+                updateNotificationBadge();
+            }
+        });
     }
 }
 
@@ -128,5 +151,19 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+setInterval(() => {
+    fetch('{% url "notifications:notification_list" %}')
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newList = doc.querySelector('.card-body');
+            const currentList = document.querySelector('.card-body');
+            if (newList && currentList) {
+                currentList.innerHTML = newList.innerHTML;
+            }
+        });
+}, 15000);
 </script>
 {% endblock %}

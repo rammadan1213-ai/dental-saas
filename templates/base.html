@@ -71,6 +71,27 @@ function showUpgradeNotice(feature) {
     alert('🔒 ' + (messages[feature] || 'This feature requires a higher plan.') + '\n\nVisit /pricing/ to upgrade your subscription.');
     window.location.href = '/pricing/';
 }
+
+function updateNotificationBadge() {
+    fetch('{% url "notifications:unread_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            document.querySelectorAll('.notification-badge').forEach(el => {
+                if (data.count > 0) {
+                    el.textContent = data.count > 99 ? '99+' : data.count;
+                    el.style.display = 'inline-block';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        })
+        .catch(() => {});
+}
+
+{% if user.is_authenticated %}
+updateNotificationBadge();
+setInterval(updateNotificationBadge, 10000);
+{% endif %}
 </script>
 </body>
 </html>
