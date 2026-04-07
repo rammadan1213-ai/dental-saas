@@ -10,15 +10,12 @@ User = get_user_model()
 @receiver(user_logged_in)
 def notify_superadmin_on_login(sender, request, user, **kwargs):
     """Notify superadmins when a user logs in"""
-    from utils.audit import log_login
-
+    if not user.is_authenticated:
+        return
     clinic_name = (
         user.clinic.name if hasattr(user, "clinic") and user.clinic else "No Clinic"
     )
-    message = f"{user.get_full_name or user.username} logged into {clinic_name}"
-
-    # Log to audit
-    log_login(request, user)
+    message = f"{user.get_full_name() or user.username} logged into {clinic_name}"
 
     # Get all superadmins
     superadmins = User.objects.filter(is_superuser=True)
@@ -36,11 +33,21 @@ def notify_superadmin_on_login(sender, request, user, **kwargs):
 @receiver(user_logged_out)
 def notify_superadmin_on_logout(sender, request, user, **kwargs):
     """Notify superadmins when a user logs out"""
-    from utils.audit import log_logout
-
+    if not user.is_authenticated:
+        return
     clinic_name = (
         user.clinic.name if hasattr(user, "clinic") and user.clinic else "No Clinic"
     )
+    message = f"{user.get_full_name() or user.username} logged out from {clinic_name}"
 
-    # Log to audit
-    log_logout(request, user)
+    # Get all superadmins
+    superadmins = User.objects.filter(is_superuser=True)
+
+    for admin in superadmins:
+        Notification.objects.create(
+            user=admin,
+            title=f"User Logout: {user.username}",
+            message=message,
+            notification_type="info",
+            link=f"/accounts/users/{user.id}/",
+        )

@@ -368,10 +368,13 @@
         </li>
         
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'accounts:logout' %}">
-                <i class="bi bi-box-arrow-left"></i>
-                Logout
-            </a>
+            <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="nav-link btn-link" style="background: none; border: none; cursor: pointer;">
+                    <i class="bi bi-box-arrow-left"></i>
+                    Logout
+                </button>
+            </form>
         </li>
     </ul>
     </div>

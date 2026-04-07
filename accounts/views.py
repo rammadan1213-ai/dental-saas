@@ -62,17 +62,12 @@ class LoginView(View):
 
 
 class LogoutView(View):
-    def get(self, request):
-        user = request.user if request.user.is_authenticated else None
+    def post(self, request):
         logout(request)
-        if user:
-            from django.contrib.auth.signals import user_logged_out
-            from django.dispatch import Signal
-
-            # Dispatch logout signal manually
-            user_logged_out.send(sender=None, request=request, user=user)
-        messages.success(request, "You have been logged out successfully.")
         return redirect("accounts:login")
+
+    def get(self, request):
+        return self.post(request)
 
 
 class AdminRequiredMixin(UserPassesTestMixin):
