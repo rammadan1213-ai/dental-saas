@@ -188,11 +188,26 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
                 queryset = queryset.none()
         return queryset
 
-    def render_to_response(self, context, **response_kwargs):
+    def get(self, request, *args, **kwargs):
         try:
-            return super().render_to_response(context, **response_kwargs)
+            return super().get(request, *args, **kwargs)
         except Exception as e:
-            messages.error(self.request, f"Error: {str(e)}")
+            print(f"UserDeleteView GET error: {e}")
+            import traceback
+
+            traceback.print_exc()
+            messages.error(request, f"Error: {str(e)}")
+            return redirect("accounts:user_list")
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except Exception as e:
+            print(f"UserDeleteView POST error: {e}")
+            import traceback
+
+            traceback.print_exc()
+            messages.error(request, f"Error: {str(e)}")
             return redirect("accounts:user_list")
 
 
