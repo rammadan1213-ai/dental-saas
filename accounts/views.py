@@ -177,25 +177,23 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
     model = User
     template_name = "accounts/user_confirm_delete.html"
     success_url = reverse_lazy("accounts:user_list")
+    context_object_name = "object"
 
     def get_queryset(self):
         queryset = super().get_queryset()
         if not self.request.user.is_superuser:
-            queryset = queryset.filter(clinic=self.request.user.clinic)
+            if self.request.user.clinic:
+                queryset = queryset.filter(clinic=self.request.user.clinic)
+            else:
+                queryset = queryset.none()
         return queryset
 
-    def get_object(self, queryset=None):
+    def render_to_response(self, context, **response_kwargs):
         try:
-            return super().get_object(queryset)
+            return super().render_to_response(context, **response_kwargs)
         except Exception as e:
             messages.error(self.request, f"Error: {str(e)}")
-            return None
-
-    def form_valid(self, form):
-        if self.get_object() is None:
             return redirect("accounts:user_list")
-        messages.success(self.request, "User deleted successfully.")
-        return super().form_valid(form)
 
 
 class UserProfileView(LoginRequiredMixin, DetailView):
