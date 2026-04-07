@@ -6,14 +6,14 @@ class SearchLog(models.Model):
     query = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="search_logs",
     )
     clinic = models.ForeignKey(
         "clinics.Clinic",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="search_logs",
