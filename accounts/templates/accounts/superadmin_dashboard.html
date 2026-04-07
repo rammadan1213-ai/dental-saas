@@ -608,15 +608,16 @@ function performSearch() {
     resultsDiv.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
     
     fetch(`/api/search/?q=${encodeURIComponent(query)}`, {
-        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Search data:', data);
         let html = '';
         if (data.clinics && data.clinics.length) {
             html += '<div class="mb-2"><strong>Clinics:</strong></div>';
             data.clinics.forEach(c => {
-                html += `<a href="/accounts/clinic/${c.id}/" class="list-group-item list-group-item-action">${c.name}</a>`;
+                html += `<a href="/accounts/admin/clinic/${c.id}/" class="list-group-item list-group-item-action">${c.name}</a>`;
             });
         }
         if (data.patients && data.patients.length) {
@@ -634,7 +635,8 @@ function performSearch() {
         if (!html) html = '<div class="text-center text-muted p-3">No results found</div>';
         resultsDiv.innerHTML = html;
     })
-    .catch(() => {
+    .catch((err) => {
+        console.error('Search error:', err);
         resultsDiv.innerHTML = '<div class="text-center text-muted p-3">Search error</div>';
     });
 }
