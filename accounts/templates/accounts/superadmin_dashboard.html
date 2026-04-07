@@ -617,7 +617,7 @@ function performSearch() {
         if (data.clinics && data.clinics.length) {
             html += '<div class="mb-2"><strong>Clinics:</strong></div>';
             data.clinics.forEach(c => {
-                html += `<a href="/accounts/admin/clinic/${c.id}/" class="list-group-item list-group-item-action">${c.name}</a>`;
+                html += `<a href="/accounts/admin/dashboard/?clinic=${c.id}" class="list-group-item list-group-item-action">${c.name}</a>`;
             });
         }
         if (data.patients && data.patients.length) {
